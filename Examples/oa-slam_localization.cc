@@ -51,41 +51,47 @@ int main(int argc, char **argv)
                         "      vocabulary_file\n"
                         "      camera_file\n"
                         "      path_to_image_sequence (.txt file listing the images or a folder with rgb.txt)\n"
-                        "      detections_file\n"
+                        "      detections_file (.json file with detections or .onnx yolov5 weights)\n"
+                        "      categories_to_ignore_file (file containing the categories to ignore (one category_id per line))\n"
                         "      map_file (.yaml)\n"
                         "      relocalization_mode ('points', 'objects' or 'points+objects')\n"
                         "      output_name \n"
-                        "      show_AR_viewer (0 or 1)\n"
                         "      force_relocalization_on_each_frame (0 or 1)\n";
         return 1;
     }
 
-    // Retrieve paths to images
-    vector<string> vstrImageFilenames;
-    vector<double> vTimestamps;
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-
     std::string vocabulary_file = string(argv[1]);
     std::string parameters_file = string(argv[2]);
     string path_to_images = string(argv[3]);
     std::string detections_file(argv[4]);
-    string map_file = string(argv[5]);
-    string reloc_mode = string(argv[6]);
-    string output_name = string(argv[7]);
-    bool show_AR_viewer = std::atoi(argv[8]);
+    std::string categories_to_ignore_file(argv[5]);
+    string map_file = string(argv[6]);
+    string reloc_mode = string(argv[7]);
+    string output_name = string(argv[8]);
     bool force_reloc = std::stoi(argv[9]);
 
+
+    // possible to pass 'webcam_X' where 'X' is the webcam id
+    bool use_webcam = false;
+    int webcam_id = 0;
+    if (path_to_images.size() >= 6 && path_to_images.substr(0, 6) == "webcam") {
+        use_webcam = true;
+        if (path_to_images.size() > 7) {
+            webcam_id = std::stoi(path_to_images.substr(7));
+        }
+    }
 
     // Possible to pass a file listing images instead of a folder containing a file rgb.txt
     std::string image_list_file = "rgb.txt";
     int nn = path_to_images.size();
-    if (path_to_images[nn-1] == 't' && path_to_images[nn-2] == 'x' && path_to_images[nn-3] == 't') {
+    if (!use_webcam && get_file_extension(path_to_images) == "txt") {
         int pos = path_to_images.find_last_of('/');
         image_list_file = path_to_images.substr(pos+1);
         path_to_images = path_to_images.substr(0, pos+1);
     }
 
-    if (path_to_images.back() != '/')
+    if (!use_webcam && path_to_images.back() != '/')
         path_to_images += "/";
 
     string output_folder = output_name;
@@ -101,9 +107,35 @@ int main(int argc, char **argv)
         map_folder = map_folder_abs.string();
     }
 
+    // Load categories to ignore
+    std::ifstream fin(categories_to_ignore_file);
+    vector<int> classes_to_ignore;
+    if (!fin.is_open()) {
+        std::cout << "Warning !! Failed to open the file with ignore classes. No class will be ignore.\n";
+    } else {
+        int cat;
+        while (fin >> cat) {
+            std::cout << "Ignore category: " << cat << "\n";
+            classes_to_ignore.push_back(cat);
+        }
+    }
+
+    // Load object detections
+    auto extension = get_file_extension(detections_file);
+    std::shared_ptr<ORB_SLAM2::ImageDetectionsManager> detector = nullptr;
+    bool detect_from_file = false;
+    if (extension == "onnx") { // load network
+        detector = std::make_shared<ORB_SLAM2::ObjectDetector>(detections_file, classes_to_ignore);
+        detect_from_file = false;
+    } else if (extension == "json") { // load from external detections file
+        detector = std::make_shared<ORB_SLAM2::DetectionsFromFile>(detections_file, classes_to_ignore);
+        detect_from_file = true;
+    } else {
+        std::cout << "Invalid detection file. It should be .json or .onnx\n"
+                      "No detections will be obtained.\n";
+    }
 
 
-    ORB_SLAM2::ImageDetectionsManager detect_manager(detections_file,  {60}); // ignore label 'dining table'
     ORB_SLAM2::enumRelocalizationMode relocalization_mode = ORB_SLAM2::RELOC_POINTS;
     if (reloc_mode == string("points"))
         relocalization_mode = ORB_SLAM2::RELOC_POINTS;
@@ -117,19 +149,27 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    string strFile = path_to_images + image_list_file;
-    LoadImages(strFile, vstrImageFilenames, vTimestamps);
+    // Load images
+    cv::VideoCapture cap;
+    vector<string> vstrImageFilenames;
+    vector<double> vTimestamps;
+    int nImages = 10000;
+    if (!use_webcam) {
+        string strFile = path_to_images + image_list_file;
+        LoadImages(strFile, vstrImageFilenames, vTimestamps);
+        nImages = vstrImageFilenames.size();
+    } else {
+        cap.open(0);
+        std::cout << "Open webcam" << std::endl;
+    }
 
-    int nImages = vstrImageFilenames.size();
-    bool use_AR_viewer = true;
-
-    ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::MONOCULAR, true, use_AR_viewer, true);
+    ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::MONOCULAR, true, true, 0);
     SLAM.SetRelocalizationMode(relocalization_mode);
     SLAM.map_folder = map_folder;
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;
-    vTimesTrack.resize(nImages);
+    vTimesTrack.reserve(nImages);
 
     cout << endl << "-------" << endl;
     cout << "Start processing sequence ..." << endl;
@@ -145,52 +185,65 @@ int main(int argc, char **argv)
 
     // Main loop
     cv::Mat im;
-    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> poses(nImages, Eigen::Matrix4d::Identity());
-    std::vector<std::string> filenames(nImages);
-    std::vector<bool> reloc_status(nImages);
-    std::vector<double> reloc_times(nImages);
-    for(int ni=0; ni<nImages; ni++)
+    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> poses;
+    poses.reserve(nImages);
+    std::vector<std::string> filenames;
+    filenames.reserve(nImages);
+    std::vector<double> reloc_times;
+    reloc_times.reserve(nImages);
+    std::vector<bool> reloc_status;
+    reloc_status.reserve(nImages);
+    int ni = 0;
+    while (1)
     {
-        // Read image from file
-        std::string filename = path_to_images + vstrImageFilenames[ni];
-        filenames[ni] = filename;
-        im = cv::imread(filename, CV_LOAD_IMAGE_UNCHANGED);
-        double tframe = vTimestamps[ni];
-
+        std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+        std::string filename;
+        if (use_webcam) {
+            cap >> im;  // get image from webcam
+            filename = "frame_" + std::to_string(ni) + ".png";
+        }
+        else
+        {
+            filename = path_to_images + vstrImageFilenames[ni];
+            im = cv::imread(filename, cv::IMREAD_UNCHANGED);  // read image from disk
+        }
+        double tframe = ni < vTimestamps.size() ? vTimestamps[ni] : std::time(nullptr);
         if(im.empty())
         {
-            cerr << endl << "Failed to load image at: "
+            cerr << endl << "Failed to load image: "
                  << filename << endl;
             return 1;
         }
+        filenames.push_back(filename);
 
-        std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+        // Get object detections
+        std::vector<ORB_SLAM2::Detection::Ptr> detections;
+        if (detector) {
+            if (detect_from_file)
+                detections = detector->detect(filename); // from detections file
+            else
+                detections = detector->detect(im);  // from neural network
+        }
 
-        // Pass the image to the SLAM system
-        cv::Mat m = SLAM.TrackMonocular(im, tframe, detect_manager.get_detections(filename), force_reloc);
-        reloc_times[ni] = SLAM.relocalization_duration;
-        reloc_status[ni] = SLAM.relocalization_status;
+        // Pass the image and detections to the SLAM system
+        cv::Mat m = SLAM.TrackMonocular(im, tframe, detections, force_reloc);
+        reloc_times.push_back(SLAM.relocalization_duration);
+        reloc_status.push_back(SLAM.relocalization_status);
 
         if (m.rows && m.cols)
             poses[ni] = ORB_SLAM2::cvToEigenMatrix<double, float, 4, 4>(m);
+        else
+            poses.push_back(Eigen::Matrix4d::Identity());
 
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-
         double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
-
-        vTimesTrack[ni]=ttrack;
-
-        // Wait to load the next frame
-        double T=0;
-        if(ni<nImages-1)
-            T = vTimestamps[ni+1]-tframe;
-        else if(ni>0)
-            T = tframe-vTimestamps[ni-1];
-
-        if(ttrack<T)
-            usleep((T-ttrack)*1e6);
+        vTimesTrack.push_back(ttrack);
 
         if (SLAM.ShouldQuit())
+            break;
+
+        ++ni;
+        if (ni >= nImages)
             break;
     }
 

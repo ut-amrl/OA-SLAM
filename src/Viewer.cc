@@ -44,6 +44,8 @@
 #include <mutex>
 #include <unistd.h>
 
+#include "ARViewer.h"
+
 namespace ORB_SLAM2
 {
 
@@ -102,6 +104,8 @@ void Viewer::Run()
     pangolin::Var<bool> menuCatCol("menu.Color by Cat", false, true);
     pangolin::Var<bool> menu3DBbox("menu.Disp 3D Bboxes", false, true);
     pangolin::Var<bool> menuDistEstim("menu.Disp Distance Est.", false, true);
+    pangolin::Var<bool> menuDispARModels("menu.Disp AR Models", true, true);
+    pangolin::Var<bool> menuARFixSize("menu.Fixed AR size", true, true);
     pangolin::Var<bool> menuQuit("menu.Quit",false,false);
 
     // Define Camera Render Object (for view / scene browsing)
@@ -170,6 +174,8 @@ void Viewer::Run()
 
         if (menuDistEstim)
             mpMapDrawer->DrawDistanceEstimation(mpTracker->GetCurrentMeanDepth(), mpTracker->mCurrentFrame.mTcw);
+
+        setARViewerProperties(menuDispARModels, menuARFixSize);
 
         pangolin::FinishFrame();
 
@@ -295,5 +301,12 @@ bool Viewer::isPaused()
 {
     return mbPaused;
 }
+
+void Viewer::setARViewerProperties(bool disp_mesh, bool fix_size)
+{
+    if (ar_viewer_)
+        ar_viewer_->SetProperties(disp_mesh, fix_size);
+}
+
 
 }

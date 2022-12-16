@@ -177,6 +177,7 @@ void LocalObjectMapping::OptimizeReconstruction(MapObject *obj)
         Eigen::Matrix<double, 3, 4> P = K * Rts[i];
         // EdgeEllipsoidProjection *edge = new EdgeEllipsoidProjection(P, Ellipse::FromBbox(bboxes[i]), ellipsoid.GetOrientation());
         EdgeEllipsoidProjectionQuat *edge = new EdgeEllipsoidProjectionQuat(P, Ellipse::FromBbox(bboxes[i]), ellipsoid.GetOrientation());
+
         // EdgeEllipsoidProjectionQuatLevelSets *edge = new EdgeEllipsoidProjectionQuatLevelSets(P, Ellipse::FromBbox(bboxes[i]), ellipsoid.GetOrientation());
         // EdgeEllipsoidProjectionQuatAlg *edge = new EdgeEllipsoidProjectionQuatAlg(P, Ellipse::FromBbox(bboxes[i]), ellipsoid.GetOrientation());
         // EdgeEllipsoidProjectionQuatQBBox *edge = new EdgeEllipsoidProjectionQuatQBBox(P, Ellipse::FromBbox(bboxes[i]), ellipsoid.GetOrientation(), width, height);
@@ -186,11 +187,11 @@ void LocalObjectMapping::OptimizeReconstruction(MapObject *obj)
         edge->setVertex(0, vertex);
         Eigen::Matrix<double, 1, 1> information_matrix = Eigen::Matrix<double, 1, 1>::Identity();
         // information_matrix *= scores[i];
+        // Eigen::MatrixXd information_matrix = Eigen::MatrixXd::Identity(24, 24);
         edge->setInformation(information_matrix);
 
         // edge->setMeasurement(*it_bb);
         // edge->setInformation(Eigen::Matrix4d::Identity());
-        // Eigen::MatrixXd W = Eigen::MatrixXd::Identity(24, 24);
         // edge->setInformation(W);
         // edge->setInformation(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>::Identity(24, 24));
         g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;

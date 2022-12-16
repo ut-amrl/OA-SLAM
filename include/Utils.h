@@ -29,6 +29,16 @@
 #define TO_RAD(x) 0.01745329251 * (x)
 #define TO_DEG(x) 57.2957795131 * (x)
 
+
+// Extract the extension of a file without the '.'
+inline std::string get_file_extension(const std::string& f) {
+    auto idx = f.rfind('.');
+    if(idx == std::string::npos) {
+        return ""; // no extension
+    }
+    return f.substr(idx+1);
+}
+
 namespace ORB_SLAM2
 {
 

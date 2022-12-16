@@ -72,7 +72,7 @@ public:
     }
 
     void UpdateFrame(cv::Mat img);
-    void DrawMapPoints();
+    void DrawMapObjects();
 
     void AddModel(const std::string& model, const Eigen::Matrix4d& Twm) {
         // if (models_.size())
@@ -84,6 +84,11 @@ public:
     }
     Matrix34d IdentifyPlane();
     void DrawLines();
+
+    void SetProperties(bool disp_mesh, bool fix_size) {
+        disp_mesh_ = disp_mesh;
+        fix_mesh_size_ = fix_size;
+    }
 
 private:
 
@@ -127,6 +132,9 @@ private:
     std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> models_transf_;
     std::vector<bool> models_loaded_;
     std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> lines_;
+    std::unordered_map<MapObject*, double> size_by_object_;
+    bool disp_mesh_ = true;
+    bool fix_mesh_size_ = true;
 };
 
 }

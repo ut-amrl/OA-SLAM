@@ -30,6 +30,7 @@
 using json = nlohmann::json;
 
 #include "Utils.h"
+#include <opencv2/opencv.hpp>
 
 
 namespace ORB_SLAM2
@@ -52,27 +53,93 @@ public:
 
 private:
     Detection() = delete;
-
-
 };
 
-// using vector_Detection = std::vector<Detection, Eigen::aligned_allocator<Detection>>;
 
-class ImageDetectionsManager
+class ImageDetectionsManager {
+public:
+
+    ImageDetectionsManager() {}
+    virtual ~ImageDetectionsManager() {}
+
+    virtual std::vector<Detection::Ptr> detect(const std::string& name) const = 0;
+    virtual std::vector<Detection::Ptr> detect(unsigned int idx) const = 0;
+    virtual std::vector<Detection::Ptr> detect(cv::Mat img) const = 0;
+};
+
+
+class DetectionsFromFile : public ImageDetectionsManager
 {
 public:
-    ImageDetectionsManager(const std::string& filename, const std::vector<int>& cats_to_ignore={});
+    DetectionsFromFile(const std::string& filename, const std::vector<int>& cats_to_ignore);
+    ~DetectionsFromFile() {}
 
+    std::vector<Detection::Ptr> detect(const std::string& name) const;
 
-    std::vector<Detection::Ptr> get_detections(const std::string& name) const;
-    std::vector<Detection::Ptr> get_detections(unsigned int idx) const;
+    std::vector<Detection::Ptr> detect(unsigned int idx) const;
+
+    std::vector<Detection::Ptr> detect(cv::Mat img) const {
+        std::cerr << "This function is not available. You should pass the image filename or index as input\n";
+        return {};
+    }
 
 private:
-    ImageDetectionsManager() = delete;
     std::unordered_map<std::string, std::vector<Detection::Ptr>> detections_;
     std::vector<std::string> frame_names_;
     json data_;
 };
+
+
+#ifdef USE_DNN
+class ObjectDetector : public ImageDetectionsManager
+{
+public:
+    ObjectDetector(const std::string& model, const std::vector<int>& cats_to_ignore);
+    ~ObjectDetector() {}
+
+
+    std::vector<Detection::Ptr> detect(cv::Mat img) const;
+
+    std::vector<Detection::Ptr> detect(const std::string& name) const {
+        std::cerr << "This function is not available. You should pass an image as input\n";
+        return {};
+    }
+    std::vector<Detection::Ptr> detect(unsigned int idx) const {
+        std::cerr << "This function is not available. You should pass an image as input\n";
+        return {};
+    }
+
+private:
+    // cv::dnn::Net network_;
+    std::unique_ptr<cv::dnn::Net> network_;
+    std::unordered_set<int> ignored_cats_;
+};
+#else
+class ObjectDetector : public ImageDetectionsManager
+{
+public:
+    ObjectDetector(const std::string& model, const std::vector<int>& cats_to_ignore) {
+        std::cerr << "Object detection is only available with dnn module of opencv >= 4\n";
+    }
+    ~ObjectDetector() {}
+
+
+    std::vector<Detection::Ptr> detect(cv::Mat img) const {
+        std::cerr << "Object detection is only available with dnn module of opencv >= 4\n";
+        return {};
+    }
+
+    std::vector<Detection::Ptr> detect(const std::string& name) const {
+        std::cerr << "Object detection is only available with dnn module of opencv >= 4\n";
+        return {};
+    }
+    std::vector<Detection::Ptr> detect(unsigned int idx) const {
+        std::cerr << "Object detection is only available with dnn module of opencv >= 4\n";
+        return {};
+    }
+};
+#endif
+
 
 }
 

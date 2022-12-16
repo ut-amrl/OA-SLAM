@@ -447,7 +447,7 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp,
                 std::vector<ObjectTrack::Ptr> possible_tracks;
                 for (auto tr : objectTracks_) {
                     auto bb = tr->GetLastBbox();
-                    if (tr->GetLastObsFrameId() + 30 >= current_frame_idx_ &&
+                    if (tr->GetLastObsFrameId() + 60 >= current_frame_idx_ &&
                         bboxes_intersection(bb, img_bbox) >= 0.3 * bbox_area(bb)) {
                         possible_tracks.push_back(tr);
                     } else if (proj_bboxes.find(tr) != proj_bboxes.end()) {

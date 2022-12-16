@@ -17,9 +17,9 @@
 * along with OA-SLAM. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "ARViewer.h"
 #include <pangolin/pangolin.h>
+// #include <pangolin/gl/opengl_render_state.h>
 #include <pangolin/gl/gl.h>
 #include "shader.h"
 #include "rendertree.h"
@@ -30,6 +30,7 @@
 #include <future>
 #include <unistd.h>
 #include <random>
+
 
 namespace ORB_SLAM2
 {
@@ -102,7 +103,7 @@ void RenderToViewportFlipY(pangolin::GlTexture& tex)
 }
 
 
-void ARViewer::DrawMapPoints()
+void ARViewer::DrawMapObjects()
 {
     const std::vector<MapObject*> objects = mpMap->GetAllMapObjects();
 
@@ -126,6 +127,8 @@ void ARViewer::DrawMapPoints()
             glEnd();
         }
     }
+
+
 }
 
 
@@ -172,12 +175,73 @@ void ARViewer::Run()
             .SetHandler(new pangolin::Handler3D(s_cam));
     pangolin::GlTexture bg_tex_(w_, h_, GL_RGB, false, 0, GL_RGB, GL_UNSIGNED_BYTE);
 
+
+     enum class RenderMode { uv=0, tex, color, normal, matcap, vertex, num_modes };
+    const std::string mode_names[] = {"SHOW_UV", "SHOW_TEXTURE", "SHOW_COLOR", "SHOW_NORMAL", "SHOW_MATCAP"};
+    RenderMode current_mode = RenderMode::color;
+    pangolin::AxisDirection spin_direction = pangolin::AxisNone;
+    std::vector<std::future<pangolin::Geometry>> geom_to_load;
+    std::vector<std::string>  fn = {"../Data/ball.ply"};
+     for(const auto& filename : fn)
+    {
+        geom_to_load.emplace_back(std::async(std::launch::async,[filename](){
+            return pangolin::LoadGeometry(filename);
+        }) );
+    }
+    size_t matcap_index = 0;
+    std::vector<std::string>  mn;
+    mn.push_back("");
+    std::vector<pangolin::GlTexture> matcaps = TryLoad<pangolin::GlTexture>(mn, [](const std::string& f){
+        return pangolin::GlTexture(pangolin::LoadImage(f));
+    });
+
+
     RenderNode root;
     std::vector<std::shared_ptr<GlGeomRenderable>> renderables;
+    Eigen::Matrix4f T = Eigen::Matrix4f::Identity();
+    T(0, 0) = 0.2;
+    T(1, 1) = 0.2;
+    T(2, 2) = 0.2;
+    T(2, 3) = 2;
+    auto spin_transform = std::make_shared<FixedTransform>(T);
+    
+    
+
+    // Pull one piece of loaded geometry onto the GPU if ready
+    //如果准备好了，将一块加载的几何图形拉到 GPU 上
+    auto LoadGeometryToGpu = [&]()
+    {
+        for(auto& future_geom : geom_to_load) {
+            if( future_geom.valid() && is_ready(future_geom) ) {
+                auto geom = future_geom.get();
+                auto aabb = pangolin::GetAxisAlignedBox(geom);
+                renderables.push_back(std::make_shared<GlGeomRenderable>(pangolin::ToGlGeometry(geom), aabb));
+                // RenderNode::Edge edge = { spin_transform, { renderables[0], {} } };
+                // root.edges.emplace_back(std::move(edge));
+                // break;
+            }
+        }
+    };
+
+
+
 
     pangolin::GlSlProgram default_prog;
-    default_prog.AddShader(pangolin::GlSlAnnotatedShader, pangolin::basic_texture_shader);
-    default_prog.Link();
+    auto LoadProgram = [&](const RenderMode mode){
+        current_mode = mode;
+        default_prog.ClearShaders();
+        std::map<std::string,std::string> prog_defines;
+        for(int i=0; i < (int)RenderMode::num_modes-1; ++i) {
+            prog_defines[mode_names[i]] = std::to_string((int)mode == i);
+        }
+        default_prog.AddShader(pangolin::GlSlAnnotatedShader, pangolin::default_model_shader, prog_defines);
+        default_prog.Link();
+    };
+
+    LoadProgram(current_mode);
+
+
+
 
 
     Eigen::Matrix4d gl_to_cv = Eigen::Matrix4d::Identity();
@@ -190,19 +254,51 @@ void ARViewer::Run()
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        if (frame_.cols && frame_.rows) {
+        if (frame_.cols == w_ && frame_.rows == h_) {
 
             bg_tex_.Upload(frame_.data, GL_BGR, GL_UNSIGNED_BYTE);
+            LoadGeometryToGpu();
+
+            const std::vector<MapObject*> objects = mpMap->GetAllMapObjects();
+            root.edges.clear();
+            for (auto *obj : objects) {
+
+                Eigen::Vector3d c =  obj->GetEllipsoid().GetCenter();
+                Eigen::Matrix4f T = Eigen::Matrix4f::Identity();
+
+                if (!fix_mesh_size_ || size_by_object_.find(obj) == size_by_object_.end()) {
+                    Eigen::Vector3d axes =  obj->GetEllipsoid().GetAxes();
+                    size_by_object_[obj] = axes.maxCoeff();
+                }
+                double max_size = size_by_object_[obj];
+
+                T(0, 0) = max_size;
+                T(1, 1) = max_size;
+                T(2, 2) = max_size;
+                T.block<3, 1>(0, 3) = c.cast<float>();
+                auto transform = std::make_shared<FixedTransform>(T);
+                RenderNode::Edge edge = { transform, { renderables[0] , {} } };
+                root.edges.emplace_back(std::move(edge));
+            }
 
             pangolin::OpenGlMatrix Rt(Rt_);
             s_cam.SetModelViewMatrix(gl_to_cv * Rt);
 
             if(d_cam.IsShown()) {
                 d_cam.Activate();
-
                 s_cam.Apply();
 
-                DrawMapPoints();
+
+                if (disp_mesh_) {
+                    default_prog.Bind();
+                    render_tree(
+                            default_prog, root, s_cam.GetProjectionMatrix(), s_cam.GetModelViewMatrix(),
+                            nullptr
+                        );
+                    default_prog.Unbind();
+                } else {
+                    DrawMapObjects();
+                }
 
                 glColor3f(1.0, 1.0, 1.0);
                 RenderToViewportFlipY(bg_tex_);

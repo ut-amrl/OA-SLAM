@@ -56,11 +56,18 @@ class Tracking;
 class FrameDrawer;
 class MapDrawer;
 class System;
+class ARViewer;
 
 class Viewer
 {
 public:
     Viewer(System* pSystem, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Tracking *pTracking, const string &strSettingPath);
+
+    void setARViewer(ARViewer* viewer) {
+        ar_viewer_ = viewer;
+    }
+
+    void setARViewerProperties(bool disp_mesh, bool fix_size);
 
     // Main thread function. Draw points, keyframes, the current camera pose and the last processed
     // frame. Drawing is refreshed according to the camera fps. We use Pangolin.
@@ -106,6 +113,8 @@ private:
     std::mutex mMutexStop;
 
     bool use_class_col_ = false;
+
+    ARViewer* ar_viewer_ = nullptr;
 };
 
 }

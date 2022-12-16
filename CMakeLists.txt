@@ -11,13 +11,19 @@ set(CMAKE_CXX_FLAGS "-std=c++17 -faligned-new -Wall -Wno-deprecated-declarations
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
-find_package(OpenCV QUIET)
+find_package(OpenCV REQUIRED)
 if(NOT OpenCV_FOUND)
-   find_package(OpenCV 2.4.3 QUIET)
-   if(NOT OpenCV_FOUND)
-      message(FATAL_ERROR "OpenCV > 2.4.3 not found.")
+   message(FATAL_ERROR "OpenCV > 2.4.3 not found.")
+else()
+   if(NOT "${OpenCV_VERSION_MAJOR}" STREQUAL "4")
+      message(WARNING "OpenCV 4 is required for dnn module. Object detector will not be available.")
+   else()
+      message("OpenCV 4 found. Make sure OpenCV is built with dnn module and CUDA.")
+      add_definitions(-DUSE_DNN)
    endif()
 endif()
+
+
 
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
@@ -26,8 +32,6 @@ find_package(Protobuf REQUIRED)
 # JSON
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(Thirdparty/json)
-message(WARNING "Warning !!!! Thirdparty/json forces to use C++11. Please change cxx_std_11 to cxx_std_17 in its Thirdparty/json/CMakeLists.txt:90.")
-
 
 # Dlib
 find_package(dlib REQUIRED)

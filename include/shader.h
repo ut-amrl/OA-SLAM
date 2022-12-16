@@ -2,42 +2,6 @@
 
 namespace pangolin {
 
-const std::string default_model_shader2 = R"Shader(
-/////////////////////////////////////////
-@start vertex
-#version 120
-
-
-    uniform mat4 T_cam_norm;
-    uniform mat4 KT_cw;
-    attribute vec3 vertex;
-
-    attribute vec4 color;
-    varying vec4 vColor;
-    void main() {
-        vColor = color;
-
-        gl_Position = KT_cw * vec4(vertex, 1.0);
-    }
-
-/////////////////////////////////////////
-@start fragment
-#version 120
-
-    varying vec4 vColor;
-
-
-void main() {
-    gl_FragColor = vColor;
-
-}
-)Shader";
-
-
-
-
-
-
 const std::string default_model_shader = R"Shader(
 /////////////////////////////////////////
 @start vertex
@@ -48,7 +12,6 @@ const std::string default_model_shader = R"Shader(
 #expect SHOW_TEXTURE
 #expect SHOW_MATCAP
 #expect SHOW_UV
-#define SHOW_NORMAL 1
 
     uniform mat4 T_cam_norm;
     uniform mat4 KT_cw;
@@ -57,13 +20,38 @@ const std::string default_model_shader = R"Shader(
 #if SHOW_COLOR
     attribute vec4 color;
     varying vec4 vColor;
+    attribute vec3 normal;
     void main() {
-        vColor = color;
+        float specularStrength = 0.4;
+        vec3 lightColor = vec3(1.0, 1.0, 1.0);
+
+        vec3 ambient = lightColor * 0.75;
+
+        vec3 v = normalize(vertex);
+        vec3 n = normalize(normal);
+        // float f = n.x * v.x + n.y * v.y + n.z * v.z;
+
+        vec3 diff = max(dot(n, -v), 0) * lightColor * 1.2;
+
+        vec3 viewDir = v;
+        mat3 m = mat3(T_cam_norm);
+        // vec3 light = vec3(m[0][2], m[1][2], m[2][2]);
+        // vec3 light = vec3(m[2][0], m[2][1], m[2][2]);
+        vec3 light = -normalize(mat3(T_cam_norm) * vec3(0.0, 0.0, 1.0));
+
+        vec3 reflectDir = reflect(light, n);  
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+        vec3 specular = specularStrength * spec * lightColor;  
+        
+
+        // float f = m[0][2] * v[0] + m[1][2] * v[1] + m[2][2] * v[2];
+        // float f = m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2];
+        vColor = vec4(vec3(color) * (specular + diff + ambient), 1.0);
 #elif SHOW_NORMAL
     attribute vec3 normal;
     varying vec3 vNormal;
     void main() {
-        vNormal = mat3(T_cam_norm) * normal;
+        vNormal =  normal;
 #elif SHOW_TEXTURE
     attribute vec2 uv;
     varying vec2 vUV;
@@ -95,7 +83,6 @@ const std::string default_model_shader = R"Shader(
 #expect SHOW_TEXTURE
 #expect SHOW_MATCAP
 #expect SHOW_UV
-#define SHOW_NORMAL 1
 
 #if SHOW_COLOR
     varying vec4 vColor;
@@ -130,103 +117,6 @@ void main() {
 #endif
 }
 )Shader";
-
-
-
-
-const std::string basic_texture_shader = R"Shader(
-/////////////////////////////////////////
-@start vertex
-#version 120
-
-    uniform mat4 T_cam_norm;
-    uniform mat4 KT_cw;
-    attribute vec3 vertex;
-
-    attribute vec2 uv;
-    varying vec2 vUV;
-    void main() {
-        vUV = uv;
-        gl_Position = KT_cw * vec4(vertex, 1.0);
-    }
-
-/////////////////////////////////////////
-@start fragment
-#version 120
-    varying vec2 vUV;
-    uniform sampler2D texture_0;
-
-void main() {
-    gl_FragColor = texture2D(texture_0, vUV);
-}
-)Shader";
-
-const std::string basic_shader = R"Shader(
-/////////////////////////////////////////
-@start vertex
-#version 120
-
-    uniform mat4 T_cam_norm;
-    uniform mat4 KT_cw;
-    attribute vec3 vertex;
-
-    uniform vec4 color;
-    varying vec4 vColor;
-    void main() {
-        vColor = color;
-        // vColor = vec4(0.0, 1.0, 0.0, 1.0);
-        gl_Position = KT_cw * vec4(vertex, 1.0);
-    }
-
-/////////////////////////////////////////
-@start fragment
-#version 120
-
-    varying vec4 vColor;
-
-void main() {
-    gl_FragColor = vColor;
-}
-)Shader";
-
-
-
-const std::string custom_shader = R"Shader(
-/////////////////////////////////////////
-@start vertex
-#version 120
-
-    uniform mat4 T_cam_norm;
-    uniform mat4 KT_cw;
-    attribute vec3 vertex;
-    attribute vec3 normal;
-    varying vec3 vNormal;
-
-    uniform vec4 a_color;
-    varying vec4 vColor;
-    void main() {
-        vColor = a_color;
-        // vColor = vec4(0.0, 1.0, 0.0, 1.0);
-        vNormal = mat3(T_cam_norm) * normal;
-        gl_Position = KT_cw * vec4(vertex, 1.0);
-    }
-
-/////////////////////////////////////////
-@start fragment
-#version 120
-
-    varying vec4 vColor;
-    varying vec3 vNormal;
-
-void main() {
-    // vec3 norm = normalize(vNormal);
-    //  vec3 lightVector = gl_LightSource[0].position.xyz - position;
-    // gl_FragColor = vColor * norm[2];
-    gl_FragColor = vColor;
-    // gl_FragColor = vec4((vNormal + vec3(1.0,1.0,1.0)) / 2.0, 1.0);
-}
-)Shader";
-
 
 const std::string equi_env_shader = R"Shader(
 /////////////////////////////////////////

@@ -105,9 +105,8 @@ RUN cd /opt &&\
     make install
 
 RUN cd /opt/ &&\
-    git clone https://gitlab.inria.fr/mzins/orb_slam2_objects.git OA-SLAM &&\
+    git clone https://gitlab.inria.fr/tangram/oa-slam.git OA-SLAM &&\
     cd OA-SLAM &&\
-    git checkout public_clean &&\
     cd Thirdparty &&\
     cd DBoW2 &&\
     mkdir build &&\

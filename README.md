@@ -60,7 +60,7 @@ sh build.sh
 Some test sequences are available in the [TUM-RGB dataset](https://vision.in.tum.de/data/datasets/rgbd-dataset).
 In particular, we use the *fr2/desk* scene.
 
-Sample data of our custom scenes are available at: [https://bul.univ-lorraine.fr/index.php/s/R3rkMXMiCHaMwWx](https://bul.univ-lorraine.fr/index.php/s/R3rkMXMiCHaMwWx)
+Sample data of our custom scenes are available at: [https://dorel.univ-lorraine.fr/dataset.xhtml?persistentId=doi%3A10.12763%2F2CZWJP](https://dorel.univ-lorraine.fr/dataset.xhtml?persistentId=doi%3A10.12763%2F2CZWJP)
 
 
 Our system takes object detections as input. We provide detections in JSON files for the sample data and for *fr2/desk* in the *Data* folder. They can be obtained from any object detector.
@@ -107,7 +107,7 @@ Example to run OA-SLAM on the scene *fr2/desk*:
 
 ## Live mode
 
-It is possible to run OA-SLAM live using a webcam and YOLOv5. Trained weights are available at: [https://bul.univ-lorraine.fr/index.php/s/mN6sETXimTkjkS3](https://bul.univ-lorraine.fr/index.php/s/mN6sETXimTkjkS3). 
+It is possible to run OA-SLAM live using a webcam and YOLOv5. Trained weights are available at: [https://dorel.univ-lorraine.fr/dataset.xhtml?persistentId=doi%3A10.12763%2F2CZWJP](https://dorel.univ-lorraine.fr/dataset.xhtml?persistentId=doi%3A10.12763%2F2CZWJP)
 
 These weights are either trained on COCO dataset or fine-tuned on our statutes and museum objects. Models for image size 640 and 320 are available.
 

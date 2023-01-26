@@ -172,6 +172,8 @@ sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
 sudo systemctl restart docker
 ```
 
+Replace ```UBUNTU_VERSION``` by your version (for example ```ubuntu18.04```).
+
 Build the image:
 ```
 docker build -t oa-slam .

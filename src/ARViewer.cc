@@ -208,7 +208,6 @@ void ARViewer::Run()
     
 
     // Pull one piece of loaded geometry onto the GPU if ready
-    //如果准备好了，将一块加载的几何图形拉到 GPU 上
     auto LoadGeometryToGpu = [&]()
     {
         for(auto& future_geom : geom_to_load) {
@@ -216,9 +215,6 @@ void ARViewer::Run()
                 auto geom = future_geom.get();
                 auto aabb = pangolin::GetAxisAlignedBox(geom);
                 renderables.push_back(std::make_shared<GlGeomRenderable>(pangolin::ToGlGeometry(geom), aabb));
-                // RenderNode::Edge edge = { spin_transform, { renderables[0], {} } };
-                // root.edges.emplace_back(std::move(edge));
-                // break;
             }
         }
     };

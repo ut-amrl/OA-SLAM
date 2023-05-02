@@ -155,7 +155,11 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
 }
 
-cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
+cv::Mat System::TrackStereo(const cv::Mat &imLeft, 
+                            const cv::Mat &imRight, 
+                            const double &timestamp, 
+                            const std::vector<Detection::Ptr>& detections,
+                            bool force_relocalize)
 {
     if(mSensor!=STEREO)
     {

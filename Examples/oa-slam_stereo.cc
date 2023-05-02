@@ -135,14 +135,31 @@ int main(int argc, char **argv)
                vstrImageLeft,
                vstrImageRight, 
                vTimestamps);
+    vector<double> vDoubleTimestamps;
+    for (const auto &timestamp : vTimestamps) {
+        vDoubleTimestamps.push_back((timestamp.first) + double(timestamp.second)*1e-9);
+    }
+    size_t nFrames = vTimestamps.size();
+    std::cout << "nFrames: " << nFrames << std::endl;
 
-    std::cout << "vstrImageLeft size: " << vstrImageLeft.size() << std::endl;
-    std::cout << "vstrImageRight size: " << vstrImageRight.size() << std::endl;
-    std::cout << "vTimestamps size: " << vstrImageRight.size() << std::endl;
+    // Load categories to ignore
+    std::ifstream fin(categories_to_ignore_file);
+    vector<int> classes_to_ignore;
+    if (!fin.is_open()) {
+        std::cout << "Warning !! Failed to open the file with ignore classes. No class will be ignore.\n";
+    } else {
+        int cat;
+        while (fin >> cat) {
+            std::cout << "Ignore category: " << cat << "\n";
+            classes_to_ignore.push_back(cat);
+        }
+    }
+    fin.close();
 
-    std::shared_ptr<ORB_SLAM2::ImageDetectionsManager> detector = nullptr;
-
-
+    cout << "Start loading detectors" << endl;
+    std::shared_ptr<ORB_SLAM2::ImageDetectionsManager> detector_left = nullptr;
+    detector_left = std::make_shared<ORB_SLAM2::DetectionsFromFile>(detections_file_for_cam_1, classes_to_ignore);
+    cout << "Finish loading detectors" << endl;
 
     // Relocalization mode
     ORB_SLAM2::enumRelocalizationMode relocalization_mode = ORB_SLAM2::RELOC_POINTS;
@@ -159,10 +176,33 @@ int main(int argc, char **argv)
     }
     cout << "Finish setting relocalization mode" << endl;
 
-    ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, true, true, false);
+    ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::MONOCULAR, true, true, false);
+    // ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, true, true, false);
     SLAM.SetRelocalizationMode(relocalization_mode);
     
-    
+    ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
+    cv::Mat imLeft, imRight;
+    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> poses;
+
+    // Vector for tracking time statistics
+    std::vector<double> vTimesTrack(nFrames);
+    for (size_t ni = 0; ni < nFrames; ++ni) {
+        std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+
+        imLeft = cv::imread(vstrImageLeft[ni], cv::IMREAD_UNCHANGED);
+        imRight = cv::imread(vstrImageRight[ni], cv::IMREAD_UNCHANGED);
+        std::vector<ORB_SLAM2::Detection::Ptr> detections_left;
+        detections_left = detector_left->detect(vstrImageLeft[ni]);
+        cv::Mat m = SLAM.TrackMonocular(imLeft, vDoubleTimestamps[ni], detections_left, false);
+        // cv::Mat m = SLAM.TrackStereo(imLeft, imRight, vDoubleTimestamps[ni], detections_left, false);
+
+        std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+        double ttrack = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
+        vTimesTrack.push_back(ttrack);
+        std::cout << "time = " << ttrack << "\n";
+        if (SLAM.ShouldQuit())
+            break;
+    }
 
     return 0;
 }

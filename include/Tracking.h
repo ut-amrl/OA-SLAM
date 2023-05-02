@@ -88,7 +88,11 @@ public:
              KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
-    cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp);
+    cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, 
+                                  const double &timestamp, 
+                                  const std::vector<Detection::Ptr>& detectionsLeft,
+                                  const std::vector<Detection::Ptr>& detectionsRight,
+                                  bool force_relocalize);
     cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp);
     cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp, const std::vector<Detection::Ptr>& detections, bool force_relocalize);
 
@@ -288,9 +292,15 @@ protected:
     std::list<ObjectTrack::Ptr> objectTracks_;
     size_t current_frame_idx_ = 0;
     bool createdNewKeyFrame_ = false;
+    // redundant for stero camera inputs
     std::vector<Detection::Ptr> current_frame_detections_;
     std::vector<Detection::Ptr> current_frame_good_detections_;
     double current_mean_depth_ = 0.0;
+
+    std::vector<Detection::Ptr> current_frame_detections_left_;
+    std::vector<Detection::Ptr> current_frame_detections_right_;
+    std::vector<Detection::Ptr> current_frame_good_detections_left_;
+    std::vector<Detection::Ptr> current_frame_good_detections_right_;
 };
 
 } //namespace ORB_SLAM

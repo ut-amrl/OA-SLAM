@@ -113,6 +113,7 @@ int main(int argc, char **argv)
     }
 
 
+    cout << "Start loading detectors" << endl;
     // Load object detections
     auto extension = get_file_extension(detections_file);
     std::shared_ptr<ORB_SLAM2::ImageDetectionsManager> detector = nullptr;
@@ -127,6 +128,7 @@ int main(int argc, char **argv)
         std::cout << "Invalid detection file. It should be .json or .onnx\n"
                       "No detections will be obtained.\n";
     }
+    cout << "Finish loading detectors" << endl;
 
 
     // Relocalization mode
@@ -142,6 +144,7 @@ int main(int argc, char **argv)
                      "It should be 'points', 'objects' or 'points+objects'.\n";
         return 1;
     }
+    cout << "Finish setting relocalization mode" << endl;
 
     // Load images
     cv::VideoCapture cap;
@@ -150,7 +153,9 @@ int main(int argc, char **argv)
     int nImages = 10000;
     if (!use_webcam) {
         string strFile = path_to_images + image_list_file;
+        cout << "Before loading images; strFile: " << strFile << endl;
         LoadImages(strFile, vstrImageFilenames, vTimestamps);
+        cout << "After loading images" << endl;
         nImages = vstrImageFilenames.size();
     } else {
         if (cap.open(webcam_id)) {
@@ -162,6 +167,7 @@ int main(int argc, char **argv)
             return -1;
         }
     }
+    cout << "nImages: " << nImages << endl;
 
     // Create system
     ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::MONOCULAR, true, true, false);

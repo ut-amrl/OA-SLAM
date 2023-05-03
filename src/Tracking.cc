@@ -404,7 +404,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
 
                 // Try to match detections to existing object track based on the associated map points
                 // Map detections to possible object tracks
-                int THRESHOLD_NB_MATCH = 10;
+                int THRESHOLD_NB_MATCH = 2; // Taijing: I lowered this threshold from 10
                 // If matched_by_points at i has matched_by_points[i] matched points
                 std::vector<int> matched_by_points(current_frame_good_detections_.size(), -1);
                 std::vector<std::vector<size_t>> nb_matched_points(current_frame_good_detections_.size(), std::vector<size_t>());
@@ -414,6 +414,8 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
                     size_t best_matched_track = 0;
                     for (size_t j = 0; j < possible_tracks.size(); ++j) {
                         auto tr_map_points = possible_tracks[j]->GetAssociatedMapPoints();
+                        // assoc_map_points[i]: 3D points that correspond to keypoints that are inside bounding box detection i
+                        // tr_map_points: 3D points that are inside object ellipsoid of possible track i
                         size_t n = count_set_map_intersection(assoc_map_points[i], tr_map_points);
                         if (n > max_nb_matches) {
                             max_nb_matches = n;
@@ -431,6 +433,13 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
                     }
                 }
 
+                // for (size_t di = 0; di < nb_matched_points.size(); ++di) {
+                //     std::cout << "nb matched points for detection " << di << ": ";
+                //     for (const auto n_points : nb_matched_points[di]) {
+                //         std::cout << n_points << " ";
+                //     }
+                //     std::cout << std::endl;
+                // }
 
                 int m = std::max(possible_tracks.size(), current_frame_good_detections_.size());
                 dlib::matrix<long> cost = dlib::zeros_matrix<long>(m, m);

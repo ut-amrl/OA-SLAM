@@ -189,7 +189,6 @@ int main(int argc, char **argv)
     std::vector<double> vTimesTrack(nFrames);
     for (size_t ni = 0; ni < nFrames; ++ni) {
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-
         imLeft = cv::imread(vstrImageLeft[ni], cv::IMREAD_UNCHANGED);
         imRight = cv::imread(vstrImageRight[ni], cv::IMREAD_UNCHANGED);
         std::vector<ORB_SLAM2::Detection::Ptr> detectionsLeft, detectionsRight;

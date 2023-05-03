@@ -157,8 +157,9 @@ int main(int argc, char **argv)
     fin.close();
 
     cout << "Start loading detectors" << endl;
-    std::shared_ptr<ORB_SLAM2::ImageDetectionsManager> detector_left = nullptr;
+    std::shared_ptr<ORB_SLAM2::ImageDetectionsManager> detector_left, detector_right;
     detector_left = std::make_shared<ORB_SLAM2::DetectionsFromFile>(detections_file_for_cam_1, classes_to_ignore);
+    detector_right = std::make_shared<ORB_SLAM2::DetectionsFromFile>(detections_file_for_cam_2, classes_to_ignore);
     cout << "Finish loading detectors" << endl;
 
     // Relocalization mode
@@ -176,8 +177,8 @@ int main(int argc, char **argv)
     }
     cout << "Finish setting relocalization mode" << endl;
 
-    ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::MONOCULAR, true, true, false);
-    // ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, true, true, false);
+    // ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::MONOCULAR, true, true, false);
+    ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, true, true, false);
     SLAM.SetRelocalizationMode(relocalization_mode);
     
     ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
@@ -191,10 +192,11 @@ int main(int argc, char **argv)
 
         imLeft = cv::imread(vstrImageLeft[ni], cv::IMREAD_UNCHANGED);
         imRight = cv::imread(vstrImageRight[ni], cv::IMREAD_UNCHANGED);
-        std::vector<ORB_SLAM2::Detection::Ptr> detections_left;
-        detections_left = detector_left->detect(vstrImageLeft[ni]);
-        cv::Mat m = SLAM.TrackMonocular(imLeft, vDoubleTimestamps[ni], detections_left, false);
-        // cv::Mat m = SLAM.TrackStereo(imLeft, imRight, vDoubleTimestamps[ni], detections_left, false);
+        std::vector<ORB_SLAM2::Detection::Ptr> detectionsLeft, detectionsRight;
+        detectionsLeft = detector_left->detect(vstrImageLeft[ni]);
+        detectionsRight = detector_right->detect(vstrImageRight[ni]);
+        // cv::Mat m = SLAM.TrackMonocular(imLeft, vDoubleTimestamps[ni], detections_left, false);
+        cv::Mat m = SLAM.TrackStereo(imLeft, imRight, vDoubleTimestamps[ni], detectionsLeft, detectionsRight, false);
 
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
         double ttrack = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();

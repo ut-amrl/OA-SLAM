@@ -158,7 +158,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 cv::Mat System::TrackStereo(const cv::Mat &imLeft, 
                             const cv::Mat &imRight, 
                             const double &timestamp, 
-                            const std::vector<Detection::Ptr>& detections,
+                            const std::vector<Detection::Ptr>& detectionsLeft,
+                            const std::vector<Detection::Ptr>& detectionsRight,
                             bool force_relocalize)
 {
     if(mSensor!=STEREO)
@@ -201,15 +202,13 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft,
     }
     }
 
-    // TODO FIXME
-    // cv::Mat Tcw = mpTracker->GrabImageStereo(imLeft,imRight,timestamp);
+    cv::Mat Tcw = mpTracker->GrabImageStereo(imLeft, imRight, timestamp, detectionsLeft, detectionsRight, force_relocalize);
 
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState = mpTracker->mState;
     mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
     mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
-    // return Tcw;
-    return cv::Mat();
+    return Tcw;
 }
 
 cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp)

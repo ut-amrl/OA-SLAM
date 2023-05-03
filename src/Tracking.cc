@@ -734,10 +734,13 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp,
 
 
         BBox2 img_bbox(0, 0, im.cols, im.rows);
+        std::cout << "mState: " << mState << std::endl;
 
         if (mState == Tracking::OK) {
 
             // Keep only detections with a certain score
+            std::cout << "current_frame_detections_ size: " << current_frame_detections_.size() << std::endl;
+            std::cout << "current_frame_good_detections_ size: " << current_frame_good_detections_.size() << std::endl;
             if (current_frame_good_detections_.size() != 0) {
 
                 KeyFrame *kf = mpLastKeyFrame;
@@ -886,11 +889,15 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp,
                     assignment = dlib::max_cost_assignment(cost); // solve
                 }
 
-
+                for (const auto a : assignment) {
+                    std::cout << a << " ";
+                }
+                std::cout << std::endl;
                 std::vector<ObjectTrack::Ptr> new_tracks;
                 for (size_t di = 0; di < current_frame_good_detections_.size(); ++di) {
                     auto det = current_frame_good_detections_[di];
                     auto assigned_track_idx = assignment[di];
+                    std::cout << "di: " << di << " --> assigned_track_idx: " << assigned_track_idx << std::endl;
                     if (assigned_track_idx >= static_cast<long>(possible_tracks.size()) || cost(di, assigned_track_idx) == 0) {
                         // assigned to non-existing => means not assigned
                         auto tr = ObjectTrack::CreateNewObjectTrack(det->category_id, det->bbox, det->score, Rt,
@@ -1328,6 +1335,7 @@ void Tracking::MonocularInitialization()
     if(!mpInitializer)
     {
         // Set Reference Frame
+        std::cout << "no mpInitializer" << std::endl;
         if(mCurrentFrame.mvKeys.size()>100)
         {
             mInitialFrame = Frame(mCurrentFrame);
@@ -1343,6 +1351,7 @@ void Tracking::MonocularInitialization()
 
             fill(mvIniMatches.begin(),mvIniMatches.end(),-1);
 
+            std::cout << "set up mpInitializer" << std::endl;
             return;
         }
     }

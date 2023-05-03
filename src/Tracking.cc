@@ -223,6 +223,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
 {
     mImGray = imRectLeft;
     cv::Mat imGrayRight = imRectRight;
+    imRectLeft.copyTo(im_rgb_);
 
     if(mImGray.channels()==3)
     {

@@ -221,6 +221,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
                                   const std::vector<Detection::Ptr>& detectionsRight,
                                   bool force_relocalize)
 {
+    current_frame_idx_ = (current_frame_idx_ + 1) % (std::numeric_limits<size_t>::max()-1);
     mImGray = imRectLeft;
     cv::Mat imGrayRight = imRectRight;
     imRectLeft.copyTo(im_rgb_);
@@ -380,7 +381,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
 
             }
             if (current_frame_good_detections_right_.size() != 0) {
-                
+
             }
 
             std::vector<ObjectTrack::Ptr> possible_tracks;

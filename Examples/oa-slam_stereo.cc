@@ -26,6 +26,7 @@
 
 #include<opencv2/core/core.hpp>
 
+#include <Converter.h>
 #include <ImageDetections.h>
 #include <System.h>
 #include "Osmap.h"
@@ -111,7 +112,7 @@ int main(int argc, char **argv)
                         "      detections_file_for_cam_2 (.json file with detections or .onnx yolov5 weights)\n"
                         "      categories_to_ignore_file (file containing the categories to ignore (one category_id per line))\n"
                         "      relocalization_mode ('points', 'objects' or 'points+objects')\n"
-                        "      output_name \n";
+                        "      output_path \n";
         return 1;
     }
 
@@ -124,7 +125,7 @@ int main(int argc, char **argv)
     std::string detections_file_for_cam_2(argv[7]);
     std::string categories_to_ignore_file(argv[8]);
     string reloc_mode = string(argv[9]);
-    string output_name = string(argv[10]);
+    string output_path = string(argv[10]);
 
     vector<string> vstrImageLeft; 
     vector<string> vstrImageRight; 
@@ -186,6 +187,16 @@ int main(int argc, char **argv)
     std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> poses;
 
     // Vector for tracking time statistics
+    std::ofstream ofp;
+    ofp.open(output_path, std::ios::trunc);
+    if (!ofp.is_open()) {
+        std::cerr << "Failed to open output file " << output_path << std::endl;
+        exit(1);
+    }
+    const std::string delimiter = ",";
+    ofp << "seconds" << delimiter << "nanoseconds" << delimiter 
+        << "transl_x" << delimiter << "transl_y" << delimiter << "transl_z" << delimiter
+        << "quat_x" << delimiter << "quat_y" << delimiter << "quat_z" << delimiter << "quat_x" << std::endl;
     std::vector<double> vTimesTrack(nFrames);
     for (size_t ni = 0; ni < nFrames; ++ni) {
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
@@ -197,6 +208,15 @@ int main(int argc, char **argv)
         detectionsRight = detector_right->detect(vstrImageRight[ni]);
         // cv::Mat m = SLAM.TrackMonocular(imLeft, vDoubleTimestamps[ni], detections_left, false);
         cv::Mat m = SLAM.TrackStereo(imLeft, imRight, vDoubleTimestamps[ni], detectionsLeft, detectionsRight, false);
+        cv::Mat pose_inv = m.inv();
+        cv::Mat R = pose_inv.rowRange(0,3).colRange(0,3);
+        cv::Mat t = pose_inv.rowRange(0,3).col(3);
+        vector<float> q = ORB_SLAM2::Converter::toQuaternion(R);
+        ofp << setprecision(3); 
+        ofp << vTimestamps[ni].first << delimiter << vTimestamps[ni].second; 
+        const size_t dimTranslation = 3, dimRotation = 4;
+        for (size_t i = 0; i < dimTranslation; ++i) { ofp << delimiter << t.at<float>(i); }
+        for (size_t i = 0; i < dimRotation; ++i) { ofp << delimiter << q[i]; }
 
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
         double ttrack = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
@@ -205,6 +225,7 @@ int main(int argc, char **argv)
         if (SLAM.ShouldQuit())
             break;
     }
+    ofp.close();
 
     return 0;
 }

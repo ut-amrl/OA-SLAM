@@ -379,8 +379,8 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
                 }
 
             }
-            if (current_frame_good_detections_left_.size() != 0) {
-                // TODO
+            if (current_frame_good_detections_right_.size() != 0) {
+                
             }
 
             std::vector<ObjectTrack::Ptr> possible_tracks;
@@ -403,7 +403,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
                 }
             }
 
-            const int THRESHOLD_NB_MATCH = 10;
+            const int THRESHOLD_NB_MATCH = 2;
             std::vector<int> matched_by_points_left(current_frame_good_detections_left_.size(), -1);
             std::vector<int> matched_by_points_right(current_frame_good_detections_right_.size(), -1);
             std::vector<std::vector<size_t>> nb_matched_points_left(current_frame_good_detections_left_.size(), std::vector<size_t>());

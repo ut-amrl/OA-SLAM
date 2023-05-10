@@ -28,10 +28,12 @@
 
 #include <ImageDetections.h>
 #include <System.h>
-#include "Osmap.h"
+// #include "Osmap.h"
 #include <nlohmann/json.hpp>
 #include <experimental/filesystem>
 #include "Utils.h"
+#include "Timestamp.h"
+#include "TimestampConversion.h"
 
 using json = nlohmann::json;
 
@@ -181,7 +183,7 @@ int main(int argc, char **argv)
     cout << "Start processing sequence ..." << endl;
     cout << "Images in the sequence: " << nImages << endl << endl;
 
-    ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
+    // ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
 
     // Main loop
     cv::Mat im;
@@ -225,7 +227,7 @@ int main(int argc, char **argv)
         }
 
         // Pass the image and detections to the SLAM system
-        cv::Mat m = SLAM.TrackMonocular(im, tframe, detections, false);
+        cv::Mat m = SLAM.TrackMonocular(im, ORB_SLAM2::toTimestampPair(tframe), detections, false);
 
         if (m.rows && m.cols)
             poses.push_back(ORB_SLAM2::cvToEigenMatrix<double, float, 4, 4>(m));
@@ -311,7 +313,7 @@ int main(int argc, char **argv)
     std::cout << "\n";
 
     // Save a reloadable map
-    osmap.mapSave(output_folder + "map_" + output_name);
+    // osmap.mapSave(output_folder + "map_" + output_name);
 
     return 0;
 }

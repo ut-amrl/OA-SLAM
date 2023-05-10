@@ -216,7 +216,7 @@ void Tracking::SetARViewer(ARViewer *pARViewer)
 
 
 cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, 
-                                  const double &timestamp, 
+                                  const Timestamp &timestamp, 
                                   const std::vector<Detection::Ptr>& detectionsLeft,
                                   const std::vector<Detection::Ptr>& detectionsRight,
                                   bool force_relocalize)
@@ -405,7 +405,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
 
                 // Try to match detections to existing object track based on the associated map points
                 // Map detections to possible object tracks
-                int THRESHOLD_NB_MATCH = 2; // Taijing: I lowered this threshold from 10
+                int THRESHOLD_NB_MATCH = 3; // Taijing: I lowered this threshold from 10
                 // If matched_by_points at i has matched_by_points[i] matched points
                 std::vector<int> matched_by_points(current_frame_good_detections_.size(), -1);
                 std::vector<std::vector<size_t>> nb_matched_points(current_frame_good_detections_.size(), std::vector<size_t>());
@@ -589,7 +589,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
 }
 
 
-cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp)
+cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const Timestamp &timestamp)
 {
     mImGray = imRGB;
     cv::Mat imDepth = imD;
@@ -620,7 +620,7 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const d
 }
 
 
-cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp,
+cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const Timestamp &timestamp,
                                      const std::vector<Detection::Ptr>& detections, bool force_relocalize)
 {
     current_frame_idx_ = (current_frame_idx_ + 1) % (std::numeric_limits<size_t>::max()-1);

@@ -21,6 +21,7 @@
 #ifndef KEYFRAME_H
 #define KEYFRAME_H
 
+#include "Timestamp.h"
 #include "MapPoint.h"
 #include "Thirdparty/DBoW2/DBoW2/BowVector.h"
 #include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
@@ -126,7 +127,7 @@ public:
     long unsigned int mnId;
     const long unsigned int mnFrameId;
 
-    const double mTimeStamp;
+    Timestamp mTimeStamp;
 
     // Grid (to speed up feature matching)
     const int mnGridCols;

@@ -238,7 +238,7 @@ void Osmap::mapLoad(string yamlFilename, bool noSetBad, bool pauseThreads){
 	// Initialize currentFrame via calling GrabImageMonocular just in case, with a dummy image.
 	if(system.mpTracker->mState == ORB_SLAM2::Tracking::NO_IMAGES_YET){
 		Mat m = Mat::zeros(100, 100, CV_8U);
-		system.mpTracker->GrabImageMonocular(m, 0.0, {}, false);
+		system.mpTracker->GrabImageMonocular(m, {0,0}, {}, false);
 	}
 #endif
 
@@ -263,7 +263,7 @@ void Osmap::mapLoad(string yamlFilename, bool noSetBad, bool pauseThreads){
 		// Add dummy point to trajectory recorder to avoid errors.  The point is in the origin of the map's reference system.
 		system.mpTracker->mlRelativeFramePoses.push_back(cv::Mat::eye(4,4,CV_32F));
 		system.mpTracker->mlpReferences.push_back(NULL);
-		system.mpTracker->mlFrameTimes.push_back(0.0);
+		system.mpTracker->mlFrameTimes.push_back({0,0});
 		system.mpTracker->mlbLost.push_back(true);
 	}
 #endif
@@ -1260,7 +1260,8 @@ int Osmap::deserialize(const SerializedObjectTrackArray &serializedObjectTrackAr
 void Osmap::serialize(const OsmapKeyFrame &keyframe, SerializedKeyframe *serializedKeyframe){
   serializedKeyframe->set_id(keyframe.mnId);
   serialize(keyframe.Tcw, serializedKeyframe->mutable_pose());
-  serializedKeyframe->set_timestamp(keyframe.mTimeStamp);
+  serialize(keyframe.mTimeStamp, serializedKeyframe->mutable_timestamp());
+//   serializedKeyframe->set_timestamp(keyframe.mTimeStamp);
   if(options[K_IN_KEYFRAME])
 	serialize(keyframe.mK, serializedKeyframe->mutable_kmatrix());
   else
@@ -1276,7 +1277,9 @@ OsmapKeyFrame *Osmap::deserialize(const SerializedKeyframe &serializedKeyframe){
 	OsmapKeyFrame *pKeyframe = new OsmapKeyFrame(this);
 
   pKeyframe->mnId = serializedKeyframe.id();
-  const_cast<double&>(pKeyframe->mTimeStamp) = serializedKeyframe.timestamp();
+  if (serializedKeyframe.has_timestamp())
+	deserialize(serializedKeyframe.timestamp(), pKeyframe->mTimeStamp);
+//   const_cast<double&>(pKeyframe->mTimeStamp) = serializedKeyframe.timestamp();
 
   if(serializedKeyframe.has_pose())
 	  deserialize(serializedKeyframe.pose(), pKeyframe->Tcw);

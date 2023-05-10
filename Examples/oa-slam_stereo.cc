@@ -26,10 +26,11 @@
 
 #include<opencv2/core/core.hpp>
 
+#include <Timestamp.h>
 #include <Converter.h>
 #include <ImageDetections.h>
 #include <System.h>
-#include "Osmap.h"
+// #include "Osmap.h"
 #include <nlohmann/json.hpp>
 #include <experimental/filesystem>
 #include "Utils.h"
@@ -41,7 +42,7 @@ namespace fs = std::experimental::filesystem;
 using namespace std;
 
 void ReadNodesByTimestamps(const string &strPathToNodesByTimestamps, 
-                           vector<std::pair<uint32_t, uint32_t>> &timestamps) {
+                           vector<ORB_SLAM2::Timestamp> &timestamps) {
     std::ifstream ifile(strPathToNodesByTimestamps);
     if (!ifile.is_open()) {
         std::cout << "Failed to open file " << strPathToNodesByTimestamps << std::endl;
@@ -61,12 +62,15 @@ void ReadNodesByTimestamps(const string &strPathToNodesByTimestamps,
     }
 }
 
-void LoadImages(const string &strPathToSequenceCam1, 
+void LoadImages(const string &strPathInputDataRootDir,
+                const string &strPathToSequenceCam1, 
                 const string &strPathToSequenceCam2, 
                 const string &strPathToNodesByTimestamps,
                 vector<string> &vstrImageLeft, 
                 vector<string> &vstrImageRight, 
-                vector<std::pair<uint32_t, uint32_t>> &vTimestamps) {
+                vector<string> &vstrImageLeftAbsolute,
+                vector<string> &vstrImageRightAbsolute,
+                vector<ORB_SLAM2::Timestamp> &vTimestamps) {
     std::string line;
     
     ifstream imgPathsLeft;
@@ -77,6 +81,8 @@ void LoadImages(const string &strPathToSequenceCam1,
     }
     while (std::getline(imgPathsLeft, line)) {
         vstrImageLeft.push_back(line);
+        fs::path pathToImage = fs::path(strPathInputDataRootDir) / line;
+        vstrImageLeftAbsolute.push_back(pathToImage.string());
     }
     imgPathsLeft.close();
 
@@ -88,6 +94,8 @@ void LoadImages(const string &strPathToSequenceCam1,
     }
     while (std::getline(imgPathsRight, line)) {
         vstrImageRight.push_back(line);
+        fs::path pathToImage = fs::path(strPathInputDataRootDir) / line;
+        vstrImageRightAbsolute.push_back(pathToImage.string());
     }
     imgPathsRight.close();
 
@@ -99,12 +107,14 @@ int main(int argc, char **argv)
     srand(time(nullptr));
     std::cout << "C++ version: " << __cplusplus << std::endl;
 
-    if(argc != 11)
+    if(argc != 12)
     {
+        cerr << "argc = " << argc << endl;
         cerr << endl << "Usage:\n"
                         " ./oa-slam\n"
                         "      vocabulary_file\n"
                         "      camera_file\n"
+                        "      input_data_root_dir (root data directory; path_to_image_sequence stores paths relative to it)"
                         "      path_to_image_sequence_for_cam_1 (.txt file listing the images for the first camera)\n"
                         "      path_to_image_sequence_for_cam_2 (.txt file listing the images for the second camera)"
                         "      path_to_nodes_by_timestamps (.txt file listing timestamps that correspond to each frame)"
@@ -118,28 +128,30 @@ int main(int argc, char **argv)
 
     std::string vocabulary_file = string(argv[1]);
     std::string parameters_file = string(argv[2]);
-    string path_to_images_cam_1 = string(argv[3]);
-    string path_to_images_cam_2 = string(argv[4]);
-    string path_to_nodes_by_timestamps = string(argv[5]);
-    std::string detections_file_for_cam_1(argv[6]);
-    std::string detections_file_for_cam_2(argv[7]);
-    std::string categories_to_ignore_file(argv[8]);
-    string reloc_mode = string(argv[9]);
-    string output_path = string(argv[10]);
+    string input_data_root_dir = string(argv[3]);
+    string path_to_images_cam_1 = string(argv[4]);
+    string path_to_images_cam_2 = string(argv[5]);
+    string path_to_nodes_by_timestamps = string(argv[6]);
+    std::string detections_file_for_cam_1(argv[7]);
+    std::string detections_file_for_cam_2(argv[8]);
+    std::string categories_to_ignore_file(argv[9]);
+    string reloc_mode = string(argv[10]);
+    string output_path = string(argv[11]);
 
     vector<string> vstrImageLeft; 
     vector<string> vstrImageRight; 
+    vector<string> vstrImageLeftAbsolute;
+    vector<string> vstrImageRightAbsolute;
     vector<std::pair<uint32_t, uint32_t>> vTimestamps;
-    LoadImages(path_to_images_cam_1, 
+    LoadImages(input_data_root_dir,
+               path_to_images_cam_1, 
                path_to_images_cam_2, 
                path_to_nodes_by_timestamps, 
                vstrImageLeft,
                vstrImageRight, 
+               vstrImageLeftAbsolute,
+               vstrImageRightAbsolute,
                vTimestamps);
-    vector<double> vDoubleTimestamps;
-    for (const auto &timestamp : vTimestamps) {
-        vDoubleTimestamps.push_back((timestamp.first) + double(timestamp.second)*1e-9);
-    }
     size_t nFrames = vTimestamps.size();
     std::cout << "nFrames: " << nFrames << std::endl;
 
@@ -182,43 +194,32 @@ int main(int argc, char **argv)
     ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, true, true, false);
     SLAM.SetRelocalizationMode(relocalization_mode);
     
-    ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
+    // ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
     cv::Mat imLeft, imRight;
     std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> poses;
 
-    // Vector for tracking time statistics
-    std::ofstream ofp;
-    ofp.open(output_path, std::ios::trunc);
-    if (!ofp.is_open()) {
-        std::cerr << "Failed to open output file " << output_path << std::endl;
-        exit(1);
-    }
-    const std::string delimiter = ",";
-    ofp << "seconds" << delimiter << "nanoseconds" << delimiter 
-        << "transl_x" << delimiter << "transl_y" << delimiter << "transl_z" << delimiter
-        << "quat_x" << delimiter << "quat_y" << delimiter << "quat_z" << delimiter << "quat_x" << std::endl;
     std::vector<double> vTimesTrack(nFrames);
 
     for (size_t ni = 0; ni < nFrames; ++ni) {
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
-        imLeft = cv::imread(vstrImageLeft[ni], cv::IMREAD_UNCHANGED);
-        imRight = cv::imread(vstrImageRight[ni], cv::IMREAD_UNCHANGED);
+        imLeft = cv::imread(vstrImageLeftAbsolute[ni], cv::IMREAD_UNCHANGED);
+        imRight = cv::imread(vstrImageRightAbsolute[ni], cv::IMREAD_UNCHANGED);
         std::vector<ORB_SLAM2::Detection::Ptr> detectionsLeft, detectionsRight;
         detectionsLeft = detector_left->detect(vstrImageLeft[ni]);
         detectionsRight = detector_right->detect(vstrImageRight[ni]);
-        // cv::Mat m = SLAM.TrackMonocular(imLeft, vDoubleTimestamps[ni], detections_left, false);
-        cv::Mat m = SLAM.TrackStereo(imLeft, imRight, vDoubleTimestamps[ni], detectionsLeft, detectionsRight, false);
-        cv::Mat pose_inv = m.inv();
-        cv::Mat R = pose_inv.rowRange(0,3).colRange(0,3);
-        cv::Mat t = pose_inv.rowRange(0,3).col(3);
-        vector<float> q = ORB_SLAM2::Converter::toQuaternion(R);
-        ofp << setprecision(3); 
-        ofp << vTimestamps[ni].first << delimiter << vTimestamps[ni].second; 
-        const size_t dimTranslation = 3, dimRotation = 4;
-        for (size_t i = 0; i < dimTranslation; ++i) { ofp << delimiter << t.at<float>(i); }
-        for (size_t i = 0; i < dimRotation; ++i) { ofp << delimiter << q[i]; }
-        ofp << std::endl;
+        cv::Mat m = SLAM.TrackStereo(imLeft, imRight, vTimestamps[ni], detectionsLeft, detectionsRight, false);
+
+        // cv::Mat pose_inv = m.inv();
+        // cv::Mat R = pose_inv.rowRange(0,3).colRange(0,3);
+        // cv::Mat t = pose_inv.rowRange(0,3).col(3);
+        // vector<float> q = ORB_SLAM2::Converter::toQuaternion(R);
+        // ofp << setprecision(3); 
+        // ofp << vTimestamps[ni].first << delimiter << vTimestamps[ni].second; 
+        // const size_t dimTranslation = 3, dimRotation = 4;
+        // for (size_t i = 0; i < dimTranslation; ++i) { ofp << delimiter << t.at<float>(i); }
+        // for (size_t i = 0; i < dimRotation; ++i) { ofp << delimiter << q[i]; }
+        // ofp << std::endl;
 
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
         double ttrack = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
@@ -227,7 +228,7 @@ int main(int argc, char **argv)
         if (SLAM.ShouldQuit())
             break;
     }
-    ofp.close();
+    // ofp.close();
 
     return 0;
 }

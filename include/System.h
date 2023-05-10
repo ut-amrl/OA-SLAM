@@ -46,6 +46,9 @@
 #include<thread>
 #include<opencv2/core/core.hpp>
 
+#include "Timestamp.h"
+#include "TimestampConversion.h"
+#include "SerializationUtils.h"
 #include "Tracking.h"
 #include "FrameDrawer.h"
 #include "ImageDetections.h"
@@ -95,19 +98,19 @@ public:
     // Proccess the given stereo frame. Images must be synchronized and rectified.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    cv::Mat TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, 
+    cv::Mat TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const Timestamp &timestamp, 
             const std::vector<Detection::Ptr>& detectionsLeft, const std::vector<Detection::Ptr>& detectionsRight, bool force_relocalize);
 
     // Process the given rgbd frame. Depthmap must be registered to the RGB frame.
     // Input image: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Input depthmap: Float (CV_32F).
     // Returns the camera pose (empty if tracking fails).
-    cv::Mat TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp);
+    cv::Mat TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const Timestamp &timestamp);
 
     // Proccess the given monocular frame
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp, const std::vector<Detection::Ptr>& detections, bool force_relocalize);
+    cv::Mat TrackMonocular(const cv::Mat &im, const Timestamp &timestamp, const std::vector<Detection::Ptr>& detections, bool force_relocalize);
 
     // This stops local mapping thread (map building) and performs only camera tracking.
     void ActivateLocalizationMode();
@@ -125,6 +128,8 @@ public:
     // It waits until all threads have finished.
     // This function must be called before saving the trajectory.
     void Shutdown();
+
+    void SaveLatestTrajectoryOVSlam(const std::string &out_file_name);
 
     // Save camera trajectory in the TUM RGB-D dataset format.
     // Only for stereo and RGB-D. This method does not work for monocular.

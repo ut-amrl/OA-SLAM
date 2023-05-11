@@ -404,6 +404,10 @@ void System::Shutdown()
     CategoryColorsManager::FreeInstance();
 }
 
+void System::MarkNewTrajectoryStart() {
+    trajectory_frame_start_idx_ = mpTracker->mlFrameTimes.size();
+}
+
 void System::SaveLatestTrajectoryOVSlam(const std::string &out_file_name) {
     cout << endl << "Saving camera trajectory to " << out_file_name << " ..." << endl;
 
@@ -428,10 +432,10 @@ void System::SaveLatestTrajectoryOVSlam(const std::string &out_file_name) {
 
     // For each frame we have a reference keyframe (lRit), the timestamp (lT) and a flag
     // which is true when tracking failed (lbL).
-    list<ORB_SLAM2::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
-    list<Timestamp>::iterator lT = mpTracker->mlFrameTimes.begin();
-    list<bool>::iterator lbL = mpTracker->mlbLost.begin();
-    for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(),
+    list<ORB_SLAM2::KeyFrame*>::iterator lRit = std::next(mpTracker->mlpReferences.begin(), trajectory_frame_start_idx_);
+    list<Timestamp>::iterator lT = std::next(mpTracker->mlFrameTimes.begin(), trajectory_frame_start_idx_);
+    list<bool>::iterator lbL = std::next(mpTracker->mlbLost.begin(), trajectory_frame_start_idx_);
+    for(list<cv::Mat>::iterator lit=std::next(mpTracker->mlRelativeFramePoses.begin(), trajectory_frame_start_idx_),
         lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lT++, lbL++)
     {
         Eigen::Vector3d t;

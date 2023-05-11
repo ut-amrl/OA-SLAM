@@ -129,6 +129,7 @@ public:
     // This function must be called before saving the trajectory.
     void Shutdown();
 
+    void MarkNewTrajectoryStart();
     void SaveLatestTrajectoryOVSlam(const std::string &out_file_name);
 
     // Save camera trajectory in the TUM RGB-D dataset format.
@@ -247,6 +248,8 @@ public:
 
     double relocalization_duration = -1;
     bool relocalization_status = false;
+
+    size_t trajectory_frame_start_idx_ = 0;
 };
 
 }// namespace ORB_SLAM

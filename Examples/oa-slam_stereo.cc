@@ -114,10 +114,10 @@ int main(int argc, char **argv)
                         " ./oa-slam\n"
                         "      vocabulary_file\n"
                         "      camera_file\n"
-                        "      input_data_root_dir (root data directory; path_to_image_sequence stores paths relative to it)"
+                        "      input_data_root_dir (root data directory; path_to_image_sequence stores paths relative to it)\n"
                         "      path_to_image_sequence_for_cam_1 (.txt file listing the images for the first camera)\n"
-                        "      path_to_image_sequence_for_cam_2 (.txt file listing the images for the second camera)"
-                        "      path_to_nodes_by_timestamps (.txt file listing timestamps that correspond to each frame)"
+                        "      path_to_image_sequence_for_cam_2 (.txt file listing the images for the second camera)\n"
+                        "      path_to_nodes_by_timestamps (.txt file listing timestamps that correspond to each frame)\n"
                         "      detections_file_for_cam_1 (.json file with detections or .onnx yolov5 weights)\n"
                         "      detections_file_for_cam_2 (.json file with detections or .onnx yolov5 weights)\n"
                         "      categories_to_ignore_file (file containing the categories to ignore (one category_id per line))\n"
@@ -190,13 +190,11 @@ int main(int argc, char **argv)
     }
     cout << "Finish setting relocalization mode" << endl;
 
-    // ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::MONOCULAR, true, true, false);
     ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, true, true, false);
     SLAM.SetRelocalizationMode(relocalization_mode);
     
     // ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
     cv::Mat imLeft, imRight;
-    std::vector<Eigen::Matrix4d, Eigen::aligned_allocator<Eigen::Matrix4d>> poses;
 
     std::vector<double> vTimesTrack(nFrames);
 
@@ -210,17 +208,6 @@ int main(int argc, char **argv)
         detectionsRight = detector_right->detect(vstrImageRight[ni]);
         cv::Mat m = SLAM.TrackStereo(imLeft, imRight, vTimestamps[ni], detectionsLeft, detectionsRight, false);
 
-        // cv::Mat pose_inv = m.inv();
-        // cv::Mat R = pose_inv.rowRange(0,3).colRange(0,3);
-        // cv::Mat t = pose_inv.rowRange(0,3).col(3);
-        // vector<float> q = ORB_SLAM2::Converter::toQuaternion(R);
-        // ofp << setprecision(3); 
-        // ofp << vTimestamps[ni].first << delimiter << vTimestamps[ni].second; 
-        // const size_t dimTranslation = 3, dimRotation = 4;
-        // for (size_t i = 0; i < dimTranslation; ++i) { ofp << delimiter << t.at<float>(i); }
-        // for (size_t i = 0; i < dimRotation; ++i) { ofp << delimiter << q[i]; }
-        // ofp << std::endl;
-
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
         double ttrack = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
         vTimesTrack.push_back(ttrack);
@@ -228,7 +215,7 @@ int main(int argc, char **argv)
         if (SLAM.ShouldQuit())
             break;
     }
-    // ofp.close();
+    SLAM.SaveLatestTrajectoryOVSlam(output_path);
 
     return 0;
 }

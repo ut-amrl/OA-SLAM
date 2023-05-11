@@ -214,7 +214,8 @@ void Tracking::SetARViewer(ARViewer *pARViewer)
     mpARViewer = pARViewer;
 }
 
-
+// TODO (Taijing) I think there's a bug when objects are behind camera in the original code
+// Will double-check/fix it in a future branch
 cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, 
                                   const Timestamp &timestamp, 
                                   const std::vector<Detection::Ptr>& detectionsLeft,

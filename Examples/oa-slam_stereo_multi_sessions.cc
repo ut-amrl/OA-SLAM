@@ -215,6 +215,7 @@ int main(int argc, char **argv)
     cout << "Finish setting relocalization mode" << endl;
 
     ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, true, true, false);
+    // ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, true, true, 1);
     SLAM.SetRelocalizationMode(relocalization_mode);
 
     size_t bag_id = 0;

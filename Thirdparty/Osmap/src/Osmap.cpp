@@ -1375,6 +1375,18 @@ namespace ORB_SLAM2
 		return i;
 	}
 
+	// Timestamp ====================================================================================================
+	void Osmap::serialize(const ORB_SLAM2::Timestamp &timestamp, SerializedTimestamp *serializedTimestamp)
+	{
+		serializedTimestamp->set_sec(timestamp.first);
+		serializedTimestamp->set_nsec(timestamp.second);
+	}
+	void Osmap::deserialize(const SerializedTimestamp &serializedTimestamp, ORB_SLAM2::Timestamp &timestamp)
+	{
+		timestamp.first = serializedTimestamp.sec();
+		timestamp.second = serializedTimestamp.nsec();
+	}
+
 	// KeyFrame ================================================================================================
 	void Osmap::serialize(const OsmapKeyFrame &keyframe, SerializedKeyframe *serializedKeyframe)
 	{

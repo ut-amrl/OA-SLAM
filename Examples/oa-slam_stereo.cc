@@ -29,7 +29,7 @@
 #include <Converter.h>
 #include <ImageDetections.h>
 #include <System.h>
-// #include "Osmap.h"
+#include "Osmap.h"
 #include <nlohmann/json.hpp>
 #include <experimental/filesystem>
 #include "Utils.h"
@@ -203,10 +203,10 @@ int main(int argc, char **argv)
     }
     cout << "Finish setting relocalization mode" << endl;
 
-    ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, true, true, false);
+    ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, false, false, false);
     SLAM.SetRelocalizationMode(relocalization_mode);
 
-    // ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
+    ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
     cv::Mat imLeft, imRight;
 
     std::vector<double> vTimesTrack(nFrames);
@@ -225,11 +225,12 @@ int main(int argc, char **argv)
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
         double ttrack = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
         vTimesTrack.push_back(ttrack);
-        std::cout << "time = " << ttrack << "\n";
+        // std::cout << "time = " << ttrack << "\n";
         if (SLAM.ShouldQuit())
             break;
     }
     SLAM.SaveLatestTrajectoryOVSlam(output_path);
+    osmap.mapSave("map_test");
 
     return 0;
 }

@@ -130,6 +130,27 @@ void LoadSequenceFile(const string &strPathToSequenceFile,
     }
 }
 
+void LoadSequenceFileWithWaypoints(const string &strPathToSequenceFile,
+                                   vector<string> &bagnames,
+                                   string &sequence_id)
+{
+    json data;
+    std::ifstream fin(strPathToSequenceFile);
+    if (!fin.is_open())
+    {
+        std::cerr << "Warning failed to open file: " << strPathToSequenceFile << std::endl;
+        return;
+    }
+    fin >> data;
+    fin.close();
+
+    sequence_id = data["sequence_info"]["seq_id"];
+    for (const auto &baginfo : data["sequence_info"]["sequence"])
+    {
+        bagnames.push_back(baginfo["bag_base_name"]);
+    }
+}
+
 // This executable is specific for UT VSLAM evaluation
 int main(int argc, char **argv)
 {
@@ -179,7 +200,8 @@ int main(int argc, char **argv)
     // Load sequence file
     vector<string> bagnames;
     string sequence_id;
-    LoadSequenceFile(strPathToSequenceFile, bagnames, sequence_id);
+    LoadSequenceFileWithWaypoints(strPathToSequenceFile, bagnames, sequence_id);
+    // LoadSequenceFile(strPathToSequenceFile, bagnames, sequence_id);
 
     // naming assumptions of the root data directory
     const string ORB_OUT = "orb_out";
@@ -235,7 +257,7 @@ int main(int argc, char **argv)
     }
     cout << "Finish setting relocalization mode" << endl;
 
-    ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, true, true, false);
+    ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, false, false, false);
     // ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, true, true, 1);
     SLAM.SetRelocalizationMode(relocalization_mode);
 
@@ -308,7 +330,7 @@ int main(int argc, char **argv)
 
             std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
             double ttrack = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
-            std::cout << "time = " << ttrack << "\n";
+            // std::cout << "time = " << ttrack << "\n";
             if (SLAM.ShouldQuit())
                 break;
         }

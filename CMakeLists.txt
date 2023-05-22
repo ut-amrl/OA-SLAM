@@ -66,8 +66,8 @@ src/KeyFrameDatabase.cc
 src/Sim3Solver.cc
 src/Initializer.cc
 src/Viewer.cc
-# src/Osmap.cpp
-# src/osmap.pb.cc
+src/Osmap.cpp
+src/osmap.pb.cc
 src/ImageDetections.cc
 src/Ellipse.cc
 src/Ellipsoid.cc

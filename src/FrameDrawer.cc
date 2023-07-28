@@ -271,6 +271,11 @@ void FrameDrawer::Update(Tracking *pTracker)
 
                 const auto* obj = tr->GetMapObject();
                 if (obj) {
+                    Eigen::Vector3d c = obj->GetEllipsoid().GetCenter();
+                    double z = Rt.row(2).dot(c.homogeneous());
+                    if (z < 0) {
+                        continue;
+                    }
                     auto proj = obj->GetEllipsoid().project(P);
                     object_projections_widgets_.push_back(ObjectProjectionWidget(proj, tr->GetId(),
                                                                                  tr->GetCategoryId(), tr->GetColor(),

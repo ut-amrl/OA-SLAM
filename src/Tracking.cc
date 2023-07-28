@@ -360,6 +360,10 @@ namespace ORB_SLAM2
                             MapObject *obj = tr->GetMapObject();
                             Eigen::Vector3d c = obj->GetEllipsoid().GetCenter();
                             double z = Rt.row(2).dot(c.homogeneous());
+                            if (z < 0) 
+                            {
+                                continue;
+                            }
                             auto ell = obj->GetEllipsoid().project(P);
                             BBox2 bb = ell.ComputeBbox();
                             if (bboxes_intersection(bb, img_bbox) < 0.3 * bbox_area(bb))
@@ -376,6 +380,10 @@ namespace ORB_SLAM2
                                 {
                                     Eigen::Vector3d c2 = it.first->GetMapObject()->GetEllipsoid().GetCenter();
                                     double z2 = Rt.row(2).dot(c2.homogeneous());
+                                    if (z2 < 0) 
+                                    {
+                                        continue;
+                                    }
                                     if (z < z2)
                                     {
                                         // remove z2

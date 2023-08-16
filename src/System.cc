@@ -408,6 +408,46 @@ void System::MarkNewTrajectoryStart() {
     trajectory_frame_start_idx_ = mpTracker->mlFrameTimes.size();
 }
 
+void System::SaveObjectMapOVSLAM(const std::string &out_file_name) {
+    cout << endl << "Saving object map to " << out_file_name << " ..." << endl;
+    std::ofstream f(out_file_name, std::ios::trunc);
+    if (!f.is_open()) {
+        cout << "Error: Failed to open file " << out_file_name << endl;
+        exit(1);
+    }
+    f << fixed;
+    std::vector<std::string> column_labels = {
+        "semantic class", "tx", "ty", "tz", "qx", "qy", "qz", "qw", "dx", "dy", "dz"
+    };
+    writeCommaSeparatedStringsLineToFile(column_labels, f);
+    
+    vector<MapObject*> objMap = mpMap->GetAllMapObjects();
+    int n_objs = 0;
+    int n_bag_objs = 0;
+    for (const MapObject* const objPrt : objMap) {
+        ObjectTrack* tr = objPrt->GetTrack();
+        if (tr->IsBad()) {
+            ++n_bag_objs;
+            continue;
+        }
+        const Ellipsoid obj = objPrt->GetEllipsoid();
+        writeCommaSeparatedStringsLineToFile({
+                std::to_string(tr->GetCategoryId()),
+                std::to_string(obj.GetCenter().x()),
+                std::to_string(obj.GetCenter().y()),
+                std::to_string(obj.GetCenter().z()),
+                std::to_string(0), 
+                std::to_string(0), 
+                std::to_string(0), 
+                std::to_string(1),
+                std::to_string(obj.GetAxes().x()),
+                std::to_string(obj.GetAxes().y()),
+                std::to_string(obj.GetAxes().z())},
+                f);
+    }
+    f.close();
+}
+
 void System::SaveLatestTrajectoryOVSlam(const std::string &out_file_name) {
     cout << endl << "Saving camera trajectory to " << out_file_name << " ..." << endl;
 

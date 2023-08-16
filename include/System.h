@@ -130,6 +130,7 @@ public:
     void Shutdown();
 
     void MarkNewTrajectoryStart();
+    void SaveObjectMapOVSLAM(const std::string &out_file_name);
     void SaveLatestTrajectoryOVSlam(const std::string &out_file_name);
 
     // Save camera trajectory in the TUM RGB-D dataset format.

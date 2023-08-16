@@ -29,7 +29,7 @@
 #include <Converter.h>
 #include <ImageDetections.h>
 #include <System.h>
-// #include "Osmap.h"
+#include "Osmap.h"
 #include <nlohmann/json.hpp>
 #include <experimental/filesystem>
 #include "Utils.h"
@@ -257,9 +257,11 @@ int main(int argc, char **argv)
     }
     cout << "Finish setting relocalization mode" << endl;
 
-    ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, false, false, false);
+    // ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, false, false, false);
+    ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, true, true, false);
     // ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::STEREO, true, true, 1);
     SLAM.SetRelocalizationMode(relocalization_mode);
+    ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
 
     size_t bag_id = 0;
     for (const string &bagname : bagnames)
@@ -343,8 +345,12 @@ int main(int argc, char **argv)
                 exit(0);
             }
         }
-        output_path /= "trajectory.csv";
-        SLAM.SaveLatestTrajectoryOVSlam(output_path);
+        fs::path traj_output_path = output_path / "trajectory.csv";
+        SLAM.SaveLatestTrajectoryOVSlam(traj_output_path);
+        fs::path map_output_path = output_path / "map_test";
+        osmap.mapSave(map_output_path.string());
+        fs::path ellipsoid_output_path = output_path / "ellipsoids.csv";
+        SLAM.SaveObjectMapOVSLAM(ellipsoid_output_path.string());
         ++bag_id;
     }
 

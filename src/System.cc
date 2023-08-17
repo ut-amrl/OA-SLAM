@@ -434,15 +434,16 @@ void System::SaveObjectMapOVSLAM(const std::string &out_file_name) {
             continue;
         }
         const Ellipsoid obj = objPrt->GetEllipsoid();
+        Eigen::Quaterniond quat(obj.GetOrientation());
         writeCommaSeparatedStringsLineToFile({
                 class_ids_and_class_names.at(tr->GetCategoryId()),
                 std::to_string(obj.GetCenter().x()),
                 std::to_string(obj.GetCenter().y()),
                 std::to_string(obj.GetCenter().z()),
-                std::to_string(0), 
-                std::to_string(0), 
-                std::to_string(0), 
-                std::to_string(1),
+                std::to_string(quat.x()), 
+                std::to_string(quat.y()), 
+                std::to_string(quat.z()), 
+                std::to_string(quat.w()),
                 std::to_string(obj.GetAxes().x()/2),
                 std::to_string(obj.GetAxes().y()/2),
                 std::to_string(obj.GetAxes().z()/2)},

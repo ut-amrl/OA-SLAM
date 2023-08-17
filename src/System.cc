@@ -409,6 +409,9 @@ void System::MarkNewTrajectoryStart() {
 }
 
 void System::SaveObjectMapOVSLAM(const std::string &out_file_name) {
+    const std::unordered_map<size_t, std::string> class_ids_and_class_names = {
+      {0, "trashcan"}, {1, "lamppost"}, {2, "treetrunk"}, {3, "bench"}};
+
     cout << endl << "Saving object map to " << out_file_name << " ..." << endl;
     std::ofstream f(out_file_name, std::ios::trunc);
     if (!f.is_open()) {
@@ -432,7 +435,7 @@ void System::SaveObjectMapOVSLAM(const std::string &out_file_name) {
         }
         const Ellipsoid obj = objPrt->GetEllipsoid();
         writeCommaSeparatedStringsLineToFile({
-                std::to_string(tr->GetCategoryId()),
+                class_ids_and_class_names.at(tr->GetCategoryId()),
                 std::to_string(obj.GetCenter().x()),
                 std::to_string(obj.GetCenter().y()),
                 std::to_string(obj.GetCenter().z()),
@@ -440,9 +443,9 @@ void System::SaveObjectMapOVSLAM(const std::string &out_file_name) {
                 std::to_string(0), 
                 std::to_string(0), 
                 std::to_string(1),
-                std::to_string(obj.GetAxes().x()),
-                std::to_string(obj.GetAxes().y()),
-                std::to_string(obj.GetAxes().z())},
+                std::to_string(obj.GetAxes().x()/2),
+                std::to_string(obj.GetAxes().y()/2),
+                std::to_string(obj.GetAxes().z()/2)},
                 f);
     }
     f.close();

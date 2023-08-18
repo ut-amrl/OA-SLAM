@@ -484,7 +484,6 @@ void System::SaveLatestTrajectoryOVSlam(const std::string &out_file_name) {
     {
         Eigen::Vector3d t;
         std::vector<float> q;
-        if (*lbL) {  continue; }
 
         KeyFrame *pKF = *lRit;
 

@@ -1,3 +1,5 @@
+# NOTE: This is a copy of OA-SLAM GitLab repo from https://gitlab.inria.fr/tangram/oa-slam
+
 # ORB-SLAM2
 
 **Associated Publication:**

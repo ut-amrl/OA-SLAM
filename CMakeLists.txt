@@ -112,3 +112,11 @@ add_executable(oa-slam_localization
 Examples/oa-slam_localization.cc)
 target_link_libraries(oa-slam_localization ${PROJECT_NAME})
 
+add_executable(oa-slam_stereo
+Examples/oa-slam_stereo.cc)
+target_link_libraries(oa-slam_stereo ${PROJECT_NAME})
+
+add_executable(oa-slam_stereo_multi_sessions
+Examples/oa-slam_stereo_multi_sessions.cc)
+target_link_libraries(oa-slam_stereo_multi_sessions ${PROJECT_NAME})
+

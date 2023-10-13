@@ -27,9 +27,11 @@
 #include <experimental/filesystem>
 
 #include <System.h>
-#include "Osmap.h"
+// #include "Osmap.h"
 #include <nlohmann/json.hpp>
 #include "Utils.h"
+#include "Timestamp.h"
+#include "TimestampConversion.h"
 
 using json = nlohmann::json;
 namespace fs = std::experimental::filesystem;
@@ -175,9 +177,9 @@ int main(int argc, char **argv)
     cout << "Start processing sequence ..." << endl;
     cout << "Images in the sequence: " << nImages << endl << endl;
 
-    ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
+    // ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
     std::cout << "Start loading map" << std::endl;
-    osmap.mapLoad(map_file);
+    // osmap.mapLoad(map_file);
     std::cout << "End of loading map" << std::endl;
     SLAM.ActivateLocalizationMode();
 
@@ -226,7 +228,7 @@ int main(int argc, char **argv)
         }
 
         // Pass the image and detections to the SLAM system
-        cv::Mat m = SLAM.TrackMonocular(im, tframe, detections, force_reloc);
+        cv::Mat m = SLAM.TrackMonocular(im, ORB_SLAM2::toTimestampPair(tframe), detections, force_reloc);
         reloc_times.push_back(SLAM.relocalization_duration);
         reloc_status.push_back(SLAM.relocalization_status);
 

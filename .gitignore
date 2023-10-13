@@ -1,0 +1,10 @@
+Thirdparty
+Data
+bin
+build
+lib
+include/Osmap.h
+include/osmap.pb.h
+src/Osmap.cpp
+src/osmap.pb.cc
+Vocabulary

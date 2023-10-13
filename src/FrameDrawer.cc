@@ -97,7 +97,9 @@ cv::Mat FrameDrawer::DrawFrame()
     } // destroy scoped mutex -> release mutex
 
     if(im.channels()<3) //this should be always true
+    {
         cvtColor(im,im,cv::COLOR_GRAY2BGR);
+    }
 
     //Draw
     if(state==Tracking::NOT_INITIALIZED) //INITIALIZING
@@ -269,6 +271,11 @@ void FrameDrawer::Update(Tracking *pTracker)
 
                 const auto* obj = tr->GetMapObject();
                 if (obj) {
+                    Eigen::Vector3d c = obj->GetEllipsoid().GetCenter();
+                    double z = Rt.row(2).dot(c.homogeneous());
+                    if (z < 0) {
+                        continue;
+                    }
                     auto proj = obj->GetEllipsoid().project(P);
                     object_projections_widgets_.push_back(ObjectProjectionWidget(proj, tr->GetId(),
                                                                                  tr->GetCategoryId(), tr->GetColor(),

@@ -28,10 +28,12 @@
 
 #include <ImageDetections.h>
 #include <System.h>
-#include "Osmap.h"
+// #include "Osmap.h"
 #include <nlohmann/json.hpp>
 #include <experimental/filesystem>
 #include "Utils.h"
+#include "Timestamp.h"
+#include "TimestampConversion.h"
 
 using json = nlohmann::json;
 
@@ -113,6 +115,7 @@ int main(int argc, char **argv)
     }
 
 
+    cout << "Start loading detectors" << endl;
     // Load object detections
     auto extension = get_file_extension(detections_file);
     std::shared_ptr<ORB_SLAM2::ImageDetectionsManager> detector = nullptr;
@@ -127,6 +130,7 @@ int main(int argc, char **argv)
         std::cout << "Invalid detection file. It should be .json or .onnx\n"
                       "No detections will be obtained.\n";
     }
+    cout << "Finish loading detectors" << endl;
 
 
     // Relocalization mode
@@ -142,6 +146,7 @@ int main(int argc, char **argv)
                      "It should be 'points', 'objects' or 'points+objects'.\n";
         return 1;
     }
+    cout << "Finish setting relocalization mode" << endl;
 
     // Load images
     cv::VideoCapture cap;
@@ -150,7 +155,9 @@ int main(int argc, char **argv)
     int nImages = 10000;
     if (!use_webcam) {
         string strFile = path_to_images + image_list_file;
+        cout << "Before loading images; strFile: " << strFile << endl;
         LoadImages(strFile, vstrImageFilenames, vTimestamps);
+        cout << "After loading images" << endl;
         nImages = vstrImageFilenames.size();
     } else {
         if (cap.open(webcam_id)) {
@@ -162,6 +169,7 @@ int main(int argc, char **argv)
             return -1;
         }
     }
+    cout << "nImages: " << nImages << endl;
 
     // Create system
     ORB_SLAM2::System SLAM(vocabulary_file, parameters_file, ORB_SLAM2::System::MONOCULAR, true, true, false);
@@ -175,7 +183,7 @@ int main(int argc, char **argv)
     cout << "Start processing sequence ..." << endl;
     cout << "Images in the sequence: " << nImages << endl << endl;
 
-    ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
+    // ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
 
     // Main loop
     cv::Mat im;
@@ -219,7 +227,7 @@ int main(int argc, char **argv)
         }
 
         // Pass the image and detections to the SLAM system
-        cv::Mat m = SLAM.TrackMonocular(im, tframe, detections, false);
+        cv::Mat m = SLAM.TrackMonocular(im, ORB_SLAM2::toTimestampPair(tframe), detections, false);
 
         if (m.rows && m.cols)
             poses.push_back(ORB_SLAM2::cvToEigenMatrix<double, float, 4, 4>(m));
@@ -305,7 +313,7 @@ int main(int argc, char **argv)
     std::cout << "\n";
 
     // Save a reloadable map
-    osmap.mapSave(output_folder + "map_" + output_name);
+    // osmap.mapSave(output_folder + "map_" + output_name);
 
     return 0;
 }

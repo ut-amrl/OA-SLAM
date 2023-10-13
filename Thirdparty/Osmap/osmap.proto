@@ -118,6 +118,11 @@ message SerializedObjectTrackArray{
   repeated SerializedObjectTrack objecttrack = 1;
 }
 
+message SerializedTimestamp{
+  uint32 sec = 1;
+  uint32 nsec = 2;
+}
+
 // KeyFrame, all fields optional, should provide pose at least.
 message SerializedKeyframe{
   uint32 id             		= 1;  // mnId
@@ -125,7 +130,7 @@ message SerializedKeyframe{
   SerializedK kmatrix			= 3;  // K matrix, alternative to index k
   uint32 kindex         		= 4;  // index to matrix list K, ignored if kmatrix is present
   repeated uint32 loopedgesids 	= 5;  // indexes to keyframes connected in a loop
-  double timestamp				= 6;  // Time stamp
+  SerializedTimestamp timestamp				= 6;  // Time stamp
 }
 
 message SerializedKeyframeArray{

@@ -29,7 +29,7 @@
 * (at your option) any later version.
 *
 * OA-SLAM is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* but WITHOUT ANY WARRANTY; without even the implied warranty ofset
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 * GNU General Public License for more details.
 *
@@ -69,6 +69,7 @@
 #include "Tracking.h"
 #include "Ellipsoid.h"
 #include "MapObject.h"
+#include "Timestamp.h"
 
 #endif
 namespace ORB_SLAM2{
@@ -111,6 +112,15 @@ public:
   std::vector<unsigned int> kf_indices;
   std::vector<double> kf_scores;
 };
+
+// class OsmapTimestamp: public Timestamp {
+// public:
+//   friend class Osmap;
+//   OsmapTimestamp(Osmap*);
+
+//   unsigned int sec;
+//   unsigned int nsec;
+// };
 
 
 /**
@@ -756,12 +766,16 @@ public:
   int deserialize(const SerializedMapobjectArray &serializedMapobjectArray, vector<OsmapMapObject*>& vectorMapObjects);
 
 
-
   // ObjectTrack ====================================================================================================
   void serialize(const OsmapObjectTrack&, SerializedObjectTrack*);
   OsmapObjectTrack *deserialize(const SerializedObjectTrack &serializedObjectTrack);
   int serialize(const vector<OsmapObjectTrack*>&, SerializedObjectTrackArray &);
   int deserialize(const SerializedObjectTrackArray &serializedObjectTrackArray, vector<OsmapObjectTrack*>& vectorObjectTracks);
+
+  // Timestamp ====================================================================================================
+  void serialize(const ORB_SLAM2::Timestamp&, SerializedTimestamp*);
+  void deserialize(const SerializedTimestamp&, ORB_SLAM2::Timestamp&);
+
 
   // KeyFrame ====================================================================================================
 

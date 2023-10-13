@@ -59,7 +59,7 @@
 #include "System.h"
 #include "Utils.h"
 #include "ObjectTrack.h"
-
+#include "Timestamp.h"
 #include <mutex>
 
 #include <Eigen/Dense>
@@ -88,9 +88,13 @@ public:
              KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
-    cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp);
-    cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp);
-    cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp, const std::vector<Detection::Ptr>& detections, bool force_relocalize);
+    cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, 
+                                  const Timestamp &timestamp, 
+                                  const std::vector<Detection::Ptr>& detectionsLeft,
+                                  const std::vector<Detection::Ptr>& detectionsRight,
+                                  bool force_relocalize);
+    cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const Timestamp &timestamp);
+    cv::Mat GrabImageMonocular(const cv::Mat &im, const Timestamp &timestamp, const std::vector<Detection::Ptr>& detections, bool force_relocalize);
 
     void SetLocalMapper(LocalMapping* pLocalMapper);
     void SetLocalObjectMapper(LocalObjectMapping* pLocalObjectMapper);
@@ -147,7 +151,7 @@ public:
     // Basically we store the reference keyframe for each frame and its relative transformation
     list<cv::Mat> mlRelativeFramePoses;
     list<KeyFrame*> mlpReferences;
-    list<double> mlFrameTimes;
+    list<Timestamp> mlFrameTimes;
     list<bool> mlbLost;
 
 
@@ -288,6 +292,7 @@ protected:
     std::list<ObjectTrack::Ptr> objectTracks_;
     size_t current_frame_idx_ = 0;
     bool createdNewKeyFrame_ = false;
+    // redundant for stero camera inputs
     std::vector<Detection::Ptr> current_frame_detections_;
     std::vector<Detection::Ptr> current_frame_good_detections_;
     double current_mean_depth_ = 0.0;

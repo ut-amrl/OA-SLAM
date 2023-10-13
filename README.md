@@ -38,7 +38,11 @@ We provide convenient scripts to run the evaluation inside the containter:
 ```Bash
 cd /root/ObVi-SLAM-Evaluation/ObVi-SLAM
 bash convenience_scripts/docker/oa_slam_data_generator.sh
+bash convenience_scripts/docker/oa_slam_sequence_executor.sh
+bash convenience_scripts/docker/oa_slam_metrics_generator.sh
 ```
+
+`oa_slam_data_generator.sh` generates input data for OA-SLAM from rosbags. The `oa_slam_sequence_executor.sh` file run ORB_SLAM3 on the all bags specified by the sequence file. The `oa_slam_metrics_generator.sh` script computes metrics for the result. You can modify the data input/output paths accordingly on your machine.
 
 
 # OA-SLAM

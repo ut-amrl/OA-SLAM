@@ -1,6 +1,47 @@
 # NOTE: This is a copy of OA-SLAM GitLab repo from https://gitlab.inria.fr/tangram/oa-slam
 
-# ORB-SLAM2
+# ObVi-SLAM Evaluation
+
+This is the repository for ObVi-SLAM Evaluation.
+
+## Set up OA-SLAM
+Here's setup guide for OA-SLAM Evaluation. If you encountered any questions during package installation, refer to the original [OA-SLAM README page](#oa-slam).
+
+1. Clone the repo using the `--recursive` flag (Skip this step if you're using the [ObVi-SLAM-Evaluation](https://github.com/ut-amrl/ObVi-SLAM-Evaluation) repo.)
+```Bash
+git clone --recursive https://github.com/ut-amrl/OA-SLAM.git
+git checkout ObViSLAMEvaluation
+```
+
+2. You can refer to the original [OA-SLAM README page](#oa-slam) to install dependent packages. Alternatively, you can setup the docker environment and launch the container following instructions [here](https://github.com/ut-amrl/ObVi-SLAM-Evaluation).
+
+3. Compile OA-SLAM:
+```Bash
+sh build.sh
+```
+If you encountered any ROS error, double check you set `ROS_PACKAGE_PATH` correctly. Specifically, you should see path to this OA-SLAM repository after you execute:
+```Bash
+echo $ROS_PACKAGE_PATH
+```
+If you didn't see the OA-SLAM path under `ROS_PACKAGE_PATH`, you may forgot to `source /.dockerenv`. Alternatively, you can run the following to set the environment variable:
+```Bash
+export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:<path_to_oa_slam_root_dir>
+```
+
+## Run Evaluation
+First, start roscore (The object detector is depending to ROS; You only need to start it if you want to generate input data for OA-SLAM):
+```Bash
+roscore
+```
+
+We provide convenient scripts to run the evaluation inside the containter:
+```Bash
+cd /root/ObVi-SLAM-Evaluation/ObVi-SLAM
+bash convenience_scripts/docker/oa_slam_data_generator.sh
+```
+
+
+# OA-SLAM
 
 **Associated Publication:**
 - **OA-SLAM: Leveraging Objects for Camera Relocalization in Visual SLAM.** Matthieu Zins, Gilles Simon, Marie-Odile Berger, *IEEE International Symposium on Mixed and Augmented Reality (ISMAR 2022).* [Paper](https://arxiv.org/abs/2209.08338) | [Video](https://youtu.be/L1HEL4kLJ3g) | [AR Demo](https://youtu.be/PXG_6LkbtgY)

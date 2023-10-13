@@ -256,7 +256,7 @@ namespace ORB_SLAM2
         current_frame_good_detections_.clear();
         for (auto det : current_frame_detections_)
         {
-            if (det->score > 0.5)
+            if (det->score > 0.2)
             {
                 current_frame_good_detections_.push_back(det);
             }
